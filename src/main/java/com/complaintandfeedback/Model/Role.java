@@ -6,14 +6,14 @@ import lombok.Data;
 @Data
 public class Role {
 
-    private String roleId;
-    private Long orgId;
-    private String roleName;
-    private Long oprId;
+    private String role_id;
+    private Long org_id;
+    private String role_name;
+    private Long opr_id;
 
-    private String createdBy;
-    private String createdOn;
-    private String modifiedBy;
-    private String modifiedOn;
-    private String isActive;
+    private String created_by;
+    private String created_on;
+    private String modified_by;
+    private String modified_on;
+    private String is_active;
 }

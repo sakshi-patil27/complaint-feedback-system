@@ -20,6 +20,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.ComplaintAndFeedbackApplication;
@@ -39,11 +40,9 @@ public class AuthenticationService {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
-//	@Autowired
-//	private AuthenticationManager authenticationManager;
-
 	@Autowired
-	private BCryptPasswordEncoder passwordEncoder;
+	private PasswordEncoder passwordEncoder;
+
 
 	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
@@ -81,7 +80,7 @@ public class AuthenticationService {
 				accountUser.getRoleId(), accountUser.getOrgId(), accountUser.getOprId(), accountUser.getCreatedBy(),
 				accountUser.getCreatedOn(), accountUser.getIsActive());
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseMessage("Success","User registered successfully",null));
+		return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseMessage("Success","User registered successfully",accountId));
 	}
 	
 	public ResponseEntity<?> login(String email, String password) {
@@ -151,20 +150,15 @@ public class AuthenticationService {
     }
 
     public boolean resetPassword(String email, String newPassword) {
-        // SQL query to fetch the user by email and ensure they are active
     	String sql = "SELECT * FROM account_user_mst WHERE email = ? AND is_active = 'YES'";
 
 		try {
 			Map<String, Object> userMap = jdbcTemplate.queryForMap(sql, email);
-            // Check if the user exists
             if (userMap != null) {
-                // Encode the new password using password encoder (e.g., bcrypt)
                 String encodedPassword = passwordEncoder.encode(newPassword);
 
-                // SQL query to update the user's password
                 String updateSql = "UPDATE account_user_mst SET password = ? WHERE email = ? AND is_active = 'YES'";
 
-                // Execute the update query using jdbcTemplate
                 int rowsUpdated = jdbcTemplate.update(updateSql, encodedPassword, email);
 
                 // Check if a row was updated (1 row should be updated if the user exists and is active)

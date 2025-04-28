@@ -33,7 +33,7 @@ public class RoleService {
 				l_DBConnection = l_DataSource.getConnection();
 
 				String l_Query = "SELECT * FROM roles_mst WHERE is_active = 'YES' AND org_id = '"+request.getOrgId()+"' AND opr_id='"+request.getOprId()+"'"
-						+"AND roles_name != 'Admin'";
+						+"AND role_name != 'Admin'";
 
 				PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query,
 						ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);

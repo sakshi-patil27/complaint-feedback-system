@@ -150,7 +150,7 @@ public class AuthenticationService {
 
     public boolean resetPassword(String email, String newPassword) {
         // SQL query to fetch the user by email and ensure they are active
-    	String sql = "SELECT * FROM account_user_mst WHERE email = ? AND is_active = 'Y'";
+    	String sql = "SELECT * FROM account_user_mst WHERE email = ? AND is_active = 'YES'";
 
 		try {
 			Map<String, Object> userMap = jdbcTemplate.queryForMap(sql, email);
@@ -160,7 +160,7 @@ public class AuthenticationService {
                 String encodedPassword = passwordEncoder.encode(newPassword);
 
                 // SQL query to update the user's password
-                String updateSql = "UPDATE account_user_mst SET password = ? WHERE email = ? AND is_active = 'Y'";
+                String updateSql = "UPDATE account_user_mst SET password = ? WHERE email = ? AND is_active = 'YES'";
 
                 // Execute the update query using jdbcTemplate
                 int rowsUpdated = jdbcTemplate.update(updateSql, encodedPassword, email);

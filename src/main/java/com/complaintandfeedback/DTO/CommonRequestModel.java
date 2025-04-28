@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CommonRequestModel {
-	  private String orgId;
-	  private String oprId;
+	  private Long orgId;
+	  private Long oprId;
 	  private String email;
+	  private String password;
+	  private String otp;
 }

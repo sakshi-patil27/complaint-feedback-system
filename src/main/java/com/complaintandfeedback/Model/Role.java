@@ -7,9 +7,9 @@ import lombok.Data;
 public class Role {
 
     private String roleId;
-    private String orgId;
+    private Long orgId;
     private String roleName;
-    private String oprId;
+    private Long oprId;
 
     private String createdBy;
     private String createdOn;

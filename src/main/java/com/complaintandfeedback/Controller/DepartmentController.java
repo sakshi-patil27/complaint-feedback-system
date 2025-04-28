@@ -22,7 +22,6 @@ public class DepartmentController {
     // Save new Department
     @PostMapping("/saveDepartment")
     public ResponseEntity<Object> saveDepartment(@RequestBody Department department) {
-    	
         return departmentService.saveDepartment(department);
     }
 
@@ -33,7 +32,7 @@ public class DepartmentController {
     }
 
     // Get all active Departments
-    @GetMapping("/getAllDepartment")
+    @PostMapping("/getAllDepartment")
     public ResponseEntity<Object> getAllActiveDepartments(@RequestBody CommonRequestModel request) {
         return departmentService.getAllActiveDepartments(request);
     }

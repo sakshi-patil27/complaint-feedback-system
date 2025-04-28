@@ -14,8 +14,8 @@ public class AccountUser {
 
     private String departmentId;  // Optional for authentication
     private String roleId;
-    private String orgId;
-    private String oprId;
+    private Long orgId;
+    private Long oprId;
 
     private String createdBy;
     private String createdOn;

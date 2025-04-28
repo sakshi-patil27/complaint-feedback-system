@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.ComplaintAndFeedbackApplication;
 import com.complaintandfeedback.DTO.AuthenticationResponse;
-import com.complaintandfeedback.DTO.UpdateUserRequest;
 import com.complaintandfeedback.Model.AccountUser;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.complaintandfeedback.securityConfig.JwtTokenProvider;
@@ -115,7 +114,7 @@ public class AuthenticationService {
 		}
 	}
 
-	public ResponseEntity<?> updateUser(UpdateUserRequest updateUserRequest) {
+	public ResponseEntity<?> updateUser(AccountUser updateUserRequest) {
 		String updateQuery = "UPDATE account_user_mst SET name = ?, phone_no = ?, department_id = ?, role_id = ?, modified_by = ?, modified_on = ? WHERE account_id = ?";
 
 		int updated = jdbcTemplate.update(updateQuery, updateUserRequest.getName(), updateUserRequest.getPhoneNo(),

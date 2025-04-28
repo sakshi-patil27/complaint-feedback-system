@@ -3,10 +3,7 @@ package com.complaintandfeedback.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import com.complaintandfeedback.DTO.EmailRequest;
-import com.complaintandfeedback.DTO.LoginRequest;
-import com.complaintandfeedback.DTO.OtpRequest;
-import com.complaintandfeedback.DTO.UpdateUserRequest;
+import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.AccountUser;
 import com.complaintandfeedback.Service.AuthenticationService;
 
@@ -26,7 +23,7 @@ public class AuthenticationController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
+	public ResponseEntity<?> loginUser(@RequestBody CommonRequestModel loginRequest) {
 		try {
 			return authenticationService.login(loginRequest.getEmail(), loginRequest.getPassword());
 
@@ -37,7 +34,7 @@ public class AuthenticationController {
 	}
 
 	@PutMapping("/update")
-	public ResponseEntity<?> updateUser(@RequestBody UpdateUserRequest updateUserRequest) {
+	public ResponseEntity<?> updateUser(@RequestBody AccountUser updateUserRequest) {
 		try {
 			return authenticationService.updateUser(updateUserRequest);
 		} catch (Exception e) {
@@ -46,7 +43,7 @@ public class AuthenticationController {
 	}
 	
 	@PostMapping("/send-otp")
-	public ResponseEntity<String> sendOtp(@RequestBody EmailRequest request) {
+	public ResponseEntity<String> sendOtp(@RequestBody CommonRequestModel request) {
 		try {
 
 		    String otp = authenticationService.generateOtp(request.getEmail());
@@ -58,7 +55,7 @@ public class AuthenticationController {
 	}
 
 	@PostMapping("/verify-otp")
-	public ResponseEntity<String> verifyOtp(@RequestBody OtpRequest request) {
+	public ResponseEntity<String> verifyOtp(@RequestBody CommonRequestModel request) {
 	    boolean isValid = authenticationService.verifyOtp(request.getEmail(), request.getOtp());
 	    if (isValid) {
 	        return ResponseEntity.ok("OTP Verified Successfully!");
@@ -69,7 +66,7 @@ public class AuthenticationController {
 	
 	// Forget Password API (Reset Password)
     @PostMapping("/forget-password")
-    public ResponseEntity<?> resetPassword(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> resetPassword(@RequestBody CommonRequestModel request) {
         String email = request.getEmail();
         String newPassword = request.getPassword();
         boolean isPasswordReset = authenticationService.resetPassword(email, newPassword);

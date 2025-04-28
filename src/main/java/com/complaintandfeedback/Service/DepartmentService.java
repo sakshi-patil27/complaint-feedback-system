@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.Department;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -119,14 +120,14 @@ public class DepartmentService {
     }
 
 
-    public ResponseEntity<Object> getAllActiveDepartments() {
+    public ResponseEntity<Object> getAllActiveDepartments(CommonRequestModel request) {
 		Connection l_DBConnection = null;
 		JSONArray l_ModuleArr = new JSONArray();
 
 		try {
 			l_DBConnection = l_DataSource.getConnection();
 
-			String l_Query = "SELECT * FROM departments_mst WHERE is_active = 'YES'";
+			String l_Query = "SELECT * FROM departments_mst WHERE is_active = 'YES'AND org_id = '"+request.getOrgId()+"' AND opr_id='"+request.getOprId()+"'";
 
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query,
 					ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);

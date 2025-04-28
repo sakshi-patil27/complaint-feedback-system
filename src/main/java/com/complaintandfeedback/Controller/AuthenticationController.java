@@ -3,7 +3,7 @@ package com.complaintandfeedback.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import com.complaintandfeedback.DTO.EmailRequest;
+import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.DTO.LoginRequest;
 import com.complaintandfeedback.DTO.OtpRequest;
 import com.complaintandfeedback.DTO.UpdateUserRequest;
@@ -46,7 +46,7 @@ public class AuthenticationController {
 	}
 	
 	@PostMapping("/send-otp")
-	public ResponseEntity<String> sendOtp(@RequestBody EmailRequest request) {
+	public ResponseEntity<String> sendOtp(@RequestBody CommonRequestModel request) {
 		try {
 
 		    String otp = authenticationService.generateOtp(request.getEmail());

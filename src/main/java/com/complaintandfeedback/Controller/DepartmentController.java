@@ -1,5 +1,6 @@
 package com.complaintandfeedback.Controller;
 
+import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.Department;
 import com.complaintandfeedback.Service.DepartmentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,7 @@ public class DepartmentController {
 
     // Get all active Departments
     @GetMapping("/getAllDepartment")
-    public ResponseEntity<Object> getAllActiveDepartments() {
-        return departmentService.getAllActiveDepartments();
+    public ResponseEntity<Object> getAllActiveDepartments(@RequestBody CommonRequestModel request) {
+        return departmentService.getAllActiveDepartments(request);
     }
 }

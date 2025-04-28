@@ -22,12 +22,7 @@ public class AuthenticationController {
 
 	@PostMapping("/register")
 	public ResponseEntity<?> registerUser(@RequestBody AccountUser accountUser) {
-		try {
 			return authenticationService.registerUser(accountUser);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
-		}
-
 	}
 
 	@PostMapping("/login")

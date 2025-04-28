@@ -19,7 +19,7 @@ public class DepartmentController {
     private DepartmentService departmentService;
     
     // Save new Department
-    @PostMapping(path = "/saveDepartment" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/saveDepartment")
     public ResponseEntity<Object> saveDepartment(@RequestBody Department department) {
     	
         return departmentService.saveDepartment(department);

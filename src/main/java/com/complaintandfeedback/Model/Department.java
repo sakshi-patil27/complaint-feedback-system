@@ -1,13 +1,16 @@
 package com.complaintandfeedback.Model;
 
-
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Department {
     private String department_id;
     private Long org_id;

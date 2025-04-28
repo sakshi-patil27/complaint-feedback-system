@@ -1,45 +1,47 @@
 package com.complaintandfeedback.Service;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import com.complaintandfeedback.ComplaintAndFeedbackApplication;
-import com.complaintandfeedback.DTO.AuthenticationResponse;
-import com.complaintandfeedback.DTO.UpdateUserRequest;
-import com.complaintandfeedback.Model.AccountUser;
-import com.complaintandfeedback.securityConfig.JwtTokenProvider;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.complaintandfeedback.ComplaintAndFeedbackApplication;
+import com.complaintandfeedback.DTO.AuthenticationResponse;
+import com.complaintandfeedback.DTO.UpdateUserRequest;
+import com.complaintandfeedback.Model.AccountUser;
+import com.complaintandfeedback.Model.ResponseMessage;
+import com.complaintandfeedback.securityConfig.JwtTokenProvider;
 
 @Service
 public class AuthenticationService {
 
 	private final ComplaintAndFeedbackApplication complaintAndFeedbackApplication;
+	
+	@Autowired
+	private CommonUtils commonUtils;
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
-	@Autowired
-	private AuthenticationManager authenticationManager;
+//	@Autowired
+//	private AuthenticationManager authenticationManager;
 
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
@@ -62,11 +64,11 @@ public class AuthenticationService {
 		// Check if email already exists
 		String emailQuery = "SELECT COUNT(*) FROM account_user_mst WHERE email = ?";
 		Integer count = jdbcTemplate.queryForObject(emailQuery, Integer.class, accountUser.getEmail());
-
-		if (count != null && count > 0) {
-			return new ResponseEntity<>("Email already exists", HttpStatus.BAD_REQUEST);
+		
+		if (count != null && count > 0) {	
+			return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Email already exists");
 		}
-
+		
 		// Generate accountId
 		String accountId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
 		accountUser.setAccountId(accountId);
@@ -80,9 +82,9 @@ public class AuthenticationService {
 				accountUser.getRoleId(), accountUser.getOrgId(), accountUser.getOprId(), accountUser.getCreatedBy(),
 				accountUser.getCreatedOn(), accountUser.getIsActive());
 
-		return new ResponseEntity<>("User registered successfully", HttpStatus.CREATED);
+		return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseMessage("Success","User registered successfully",null));
 	}
-
+	
 	public ResponseEntity<?> login(String email, String password) {
 		String sql = "SELECT * FROM account_user_mst WHERE email = ? AND is_active = 'YES'";
 
@@ -106,10 +108,10 @@ public class AuthenticationService {
 
 				return new ResponseEntity<>(response, HttpStatus.OK);
 			} else {
-				return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+				return commonUtils.responseErrorHeader(null, null, HttpStatus.UNAUTHORIZED, "Invalid credentials");
 			}
 		} catch (Exception e) {
-			return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+			return commonUtils.responseErrorHeader(null, null, HttpStatus.UNAUTHORIZED,e.toString());
 		}
 	}
 
@@ -121,9 +123,10 @@ public class AuthenticationService {
 				LocalDateTime.now().format(formatter), updateUserRequest.getAccountId());
 
 		if (updated > 0) {
-			return new ResponseEntity<>("User updated successfully", HttpStatus.OK);
+			return ResponseEntity.status(HttpStatus.OK)
+					.body(new ResponseMessage("Success","User updated successfully",null));
 		} else {
-			return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+			return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND,"User not found");
 		}
 	}
 	
@@ -172,6 +175,7 @@ public class AuthenticationService {
             }
         } catch (EmptyResultDataAccessException e) {
             System.out.println("User not found or is inactive.");
+            return false;
         }
 
         return false; 

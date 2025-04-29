@@ -11,12 +11,12 @@ import lombok.Data;
 public class AccountUser {
 
     private String accountId;
-    @NotEmpty(message = "Name field cannot be empty")	
+    @NotBlank(message = "Name field cannot be empty")	
     @Size(max = 50, min = 1, message = "Name field should be between 1 to 50 characters")
     private String name;
     @Email(message = "Invalid email format")
     private String email;
-    @NotEmpty(message = "PhoneNo field cannot be empty")	
+    @NotBlank(message = "PhoneNo field cannot be empty")	
     @Size(max = 10, min = 1, message = "PhoneNo field should be between 1 to 10 characters")
     private String phoneNo;
     @NotBlank(message = "Password must not be empty")

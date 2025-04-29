@@ -1,8 +1,125 @@
 package com.complaintandfeedback.Service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import org.json.JSONArray;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import com.complaintandfeedback.DTO.CommonRequestModel;
+import com.complaintandfeedback.Model.Complaint;
+import com.complaintandfeedback.Model.ResponseMessage;
 
 @Service
 public class ComplaintService {
+
+	@Autowired
+    private CommonUtils commonUtils;
+	
+	@Autowired
+	private DataSource l_DataSource;
+	
+	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	
+	// Save Complaint
+	public ResponseEntity<Object> saveComplaint(Complaint complaint) {
+	    
+	    Connection l_DBConnection = null;
+	    
+	    try {
+	        l_DBConnection = l_DataSource.getConnection();
+
+	        String complaintId = "COMP" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+	        complaint.setComplaint_id(complaintId);
+
+	        // SQL Insert query
+	        String l_Query = "INSERT INTO complaint_trn (complaint_id, org_id, subject, description, priority, status, department_id, created_by, assigned_to, created_on, modified_on, modified_by, due_date, is_active ,opr_id) "
+	                       + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
+
+	        PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
+
+	        // Set the parameters for the insert query
+	        l_PreparedStatement.setString(1, complaint.getComplaint_id());
+	        l_PreparedStatement.setLong(2, complaint.getOrg_id());
+	        l_PreparedStatement.setString(3, complaint.getSubject());
+	        l_PreparedStatement.setString(4, complaint.getDescription());
+	        l_PreparedStatement.setString(5, complaint.getPriority());
+	        l_PreparedStatement.setString(6, complaint.getStatus());
+	        l_PreparedStatement.setString(7, complaint.getDepartment_id());
+	        l_PreparedStatement.setString(8, complaint.getCreated_by());
+	        l_PreparedStatement.setString(9, complaint.getAssigned_to());
+	        l_PreparedStatement.setString(10, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+	        l_PreparedStatement.setString(11, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+	        l_PreparedStatement.setString(12, complaint.getModified_by());	   
+	        
+	        if (complaint.getDue_date() != null) {
+	            l_PreparedStatement.setString(13, complaint.getDue_date().toLocalDateTime().format(formatter));
+	        } else {
+	            String tomorrow = LocalDateTime.now().plusDays(1).format(formatter);
+	            l_PreparedStatement.setString(13, tomorrow);
+	        }
+	        l_PreparedStatement.setString(14,complaint.getIs_active());
+	        l_PreparedStatement.setLong(15, complaint.getOpr_id());
+
+	        int rowsAffected = l_PreparedStatement.executeUpdate();
+
+	        if (rowsAffected > 0) {
+	            return ResponseEntity.status(HttpStatus.CREATED).body(
+	                    new ResponseMessage("Success", "Complaint saved successfully", complaintId)
+	            );
+	        } else {
+	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+	        }
+	    } catch (Exception e) {
+	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+	    } finally {
+	        if (l_DBConnection != null) {
+	            try {
+	                l_DBConnection.close();
+	            } catch (Exception e) {
+	                return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+	            }
+	        }
+	    }
+	}
+	
+	// Get All Complaints According to  user 
+	public ResponseEntity<Object> getAllActiveDepartments(CommonRequestModel request) {
+		
+		Connection l_DBConnection = null;
+		JSONArray l_ModuleArr = new JSONArray();
+		
+		try {
+			l_DBConnection = l_DataSource.getConnection();
+			
+			String l_query = "SELECT role_name FROM  WHERE  ";
+			
+			// String l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES'AND org_id = '"+request.getOrgId()+"' AND opr_id='"+request.getOprId()+"'";
+			
+		} catch (Exception e) {
+			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+		}
+
+		finally {
+			if (l_DBConnection != null)
+				try {
+					l_DBConnection.close();
+				} catch (Exception e) {
+					return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+				}
+		}	
+		
+		return null;
+	}
+	
+		
 
 }

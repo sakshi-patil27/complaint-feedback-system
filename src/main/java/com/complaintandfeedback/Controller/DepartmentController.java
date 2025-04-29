@@ -12,6 +12,8 @@ import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.Department;
 import com.complaintandfeedback.Service.DepartmentService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/departments")
 public class DepartmentController {
@@ -21,13 +23,13 @@ public class DepartmentController {
     
     // Save new Department
     @PostMapping("/saveDepartment")
-    public ResponseEntity<Object> saveDepartment(@RequestBody Department department) {
+    public ResponseEntity<Object> saveDepartment(@Valid @RequestBody Department department) {
         return departmentService.saveDepartment(department);
     }
 
     // Update existing Department
     @PutMapping("/updateDepartment")
-    public ResponseEntity<Object> updateDepartment(@RequestBody Department department) {
+    public ResponseEntity<Object> updateDepartment(@Valid @RequestBody Department department) {
         return departmentService.updateDepartment(department);
     }
 

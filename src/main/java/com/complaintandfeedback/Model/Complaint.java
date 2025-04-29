@@ -1,6 +1,7 @@
 package com.complaintandfeedback.Model;
 
-import java.security.Timestamp;
+
+import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -46,8 +47,6 @@ public class Complaint {
     private Timestamp modified_on;
 
     private String modified_by;
-
-    private String attachment_id;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
     private Timestamp due_date;

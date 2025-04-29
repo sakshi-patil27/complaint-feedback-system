@@ -99,10 +99,11 @@ public class AuthenticationService {
 						List.of(new SimpleGrantedAuthority((String) userMap.get("role_id"))));
 
 				String token = jwtTokenProvider.generateToken(authentication);
-
+				             Long orgId = userMap.get("org_id") != null ? ((Number) userMap.get("org_id")).longValue() : null;
+			                Long oprId = userMap.get("opr_id") != null ? ((Number) userMap.get("opr_id")).longValue() : null;
 				AuthenticationResponse response = new AuthenticationResponse(true, "Login successful", token,
 						(String) userMap.get("account_id"), (String) userMap.get("role_id"),
-						(String) userMap.get("name"));
+						(String) userMap.get("name"),orgId,oprId);
 
 				return new ResponseEntity<>(response, HttpStatus.OK);
 			} else {
@@ -122,7 +123,7 @@ public class AuthenticationService {
 
 		if (updated > 0) {
 			return ResponseEntity.status(HttpStatus.OK)
-					.body(new ResponseMessage("Success","User updated successfully",null));
+					.body(new ResponseMessage("Success","User updated successfully",updateUserRequest.getAccountId()));
 		} else {
 			return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND,"User not found");
 		}

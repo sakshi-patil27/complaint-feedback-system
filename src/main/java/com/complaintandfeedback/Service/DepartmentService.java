@@ -33,7 +33,7 @@ public class DepartmentService {
 	@Autowired
 	private DataSource l_DataSource;
 
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    //private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public ResponseEntity<Object> saveDepartment(Department department) {
         Connection l_DBConnection = null;
@@ -127,10 +127,14 @@ public class DepartmentService {
 		try {
 			l_DBConnection = l_DataSource.getConnection();
 
-			String l_Query = "SELECT * FROM departments_mst WHERE is_active = 'YES'AND org_id = '"+request.getOrgId()+"' AND opr_id='"+request.getOprId()+"'";
-
+			String l_Query = "SELECT * FROM departments_mst WHERE is_active = 'YES'AND org_id = ?"+" AND opr_id= ?";
+			
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query,
 					ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			
+			// Use parameter binding to avoid SQL injection
+			l_PreparedStatement.setLong(1, request.getOrgId());
+			l_PreparedStatement.setLong(2, request.getOprId());
 
 			ResultSet l_ResultSet = l_PreparedStatement.executeQuery();
 			l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);

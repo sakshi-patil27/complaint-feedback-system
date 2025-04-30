@@ -13,6 +13,6 @@ public class CommonRequestModel {
 	  private String email;
 	  private String password;
 	  private String otp;
-	  private String Id;
+	  private String id;
 	  private String entity_type;
 }

@@ -1,6 +1,6 @@
 package com.complaintandfeedback.Model;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,5 +16,5 @@ public class ComplaintStatusHistory {
 	    private String to_status;
 	    private String reason;
 	    private String changed_by;
-	    private LocalDateTime changed_on = LocalDateTime.now();
-	}
+	    private Timestamp changed_on;
+}

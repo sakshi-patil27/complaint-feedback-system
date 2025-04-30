@@ -31,13 +31,15 @@ public class RoleService {
 
 			try {
 				l_DBConnection = l_DataSource.getConnection();
-
-				String l_Query = "SELECT * FROM roles_mst WHERE is_active = 'YES' AND org_id = '"+request.getOrgId()+"' AND opr_id='"+request.getOprId()+"'"
-						+"AND role_name != 'Admin'";
+				
+				String l_Query = "SELECT * FROM roles_mst WHERE is_active = 'YES' AND org_id = ? AND opr_id= ?"
+						+" AND role_name != 'ADMIN '";
 
 				PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query,
 						ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
+				l_PreparedStatement.setLong(1, request.getOrgId());
+				l_PreparedStatement.setLong(2, request.getOprId());
 				ResultSet l_ResultSet = l_PreparedStatement.executeQuery();
 				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
 				
@@ -54,7 +56,6 @@ public class RoleService {
 			} catch (Exception e) {
 				return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 			}
-
 			finally {
 				if (l_DBConnection != null)
 					try {

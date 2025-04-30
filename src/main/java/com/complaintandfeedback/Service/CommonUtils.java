@@ -1,6 +1,14 @@
 package com.complaintandfeedback.Service;
 
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Timestamp;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -9,6 +17,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
 
@@ -140,5 +150,67 @@ public class CommonUtils {
 		}
 
 		return isValid;
+	}
+
+	public String gFN_Uploaded_File_Path() {
+	    String baseDirectory = "C:" + File.separator + "Micropro_ComplaintReport";
+
+	    // Get today's date in yyyy-MM-dd format
+	    LocalDateTime now = LocalDateTime.now();
+	    String today = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+	    // Final path: C:\Micropro_ComplaintReport\yyyy-MM-dd
+	    String fullPath = baseDirectory + File.separator + today;
+
+	    // Create directories if they do not exist
+	    File directory = new File(fullPath);
+	    if (!directory.exists()) {
+	        directory.mkdirs();
+	    }
+
+	    return fullPath;
+	}
+
+
+    public  String gFN_Upload_File(String file,String fileName,String uploaded_File_Path, String entityId) {
+		fileName = entityId + "_" + fileName;
+		try {
+			Path path1 = Paths.get(uploaded_File_Path);
+			if (!Files.exists(path1)) {
+				Files.createDirectories(path1);
+			}
+			if (Files.exists(path1)) {
+				byte[] fileBytes = null;
+				if (file.indexOf(",") != -1) {
+					fileBytes = Base64.getDecoder().decode(file.split(",")[1].getBytes());
+				} else {
+					fileBytes = Base64.getDecoder().decode(file.getBytes());
+				}
+				BufferedOutputStream stream = new BufferedOutputStream(
+						new FileOutputStream(new File(path1 + File.separator + fileName)));
+				stream.write(fileBytes);
+				stream.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return fileName;
+	}
+    
+    public static String gFN_Common_Download_Data(String filePath) {
+		String fileContent = null;
+		try {
+			File requestedFile = new File(filePath);
+			if (requestedFile.exists()) {
+				byte[] fileBytes = new byte[(int) requestedFile.length()];
+				BufferedInputStream stream = new BufferedInputStream(new FileInputStream(requestedFile));
+				stream.read(fileBytes);
+				stream.close();
+				fileContent = Base64.getEncoder().encodeToString(fileBytes);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return fileContent;
 	}
 }

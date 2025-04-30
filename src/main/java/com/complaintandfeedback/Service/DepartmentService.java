@@ -52,7 +52,7 @@ public class DepartmentService {
 
             // Set the parameters for the insert query
             l_PreparedStatement.setString(1, department.getDepartment_id());
-            l_PreparedStatement.setLong(2, department.getOpr_id());
+            l_PreparedStatement.setLong(2, department.getOrg_id());
             l_PreparedStatement.setString(3, department.getDepartment_name());
             l_PreparedStatement.setString(4, department.getDescription());
             l_PreparedStatement.setString(5, department.getCreated_by());

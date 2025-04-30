@@ -24,6 +24,8 @@ import com.complaintandfeedback.Model.ResponseMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.validation.Valid;
+
 @Service
 public class ComplaintService {
 	
@@ -124,6 +126,54 @@ public class ComplaintService {
 	}
 	
 	
+	// Update existing complaint
+	public ResponseEntity<Object> updateComplaint(@Valid Complaint complaint) {	
+		
+		Connection l_DBConnection = null;
+        try {
+        	
+        	l_DBConnection = l_DataSource.getConnection();
+
+            String sql = "UPDATE complaint_trn SET subject = ?, description = ?, priority = ?, status = ?, " +
+                         "department_id = ?, assigned_to = ?, modified_by = ?, modified_on = ?, due_date = ?, " +
+                         "is_active = ?, opr_id = ?, org_id = ? WHERE complaint_id = ?";
+
+            PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+
+            l_PreparedStatement.setString(1, complaint.getSubject());
+            l_PreparedStatement.setString(2, complaint.getDescription());
+            l_PreparedStatement.setString(3, complaint.getPriority());
+            l_PreparedStatement.setString(4, complaint.getStatus());
+            l_PreparedStatement.setString(5, complaint.getDepartment_id());
+            l_PreparedStatement.setString(6, complaint.getAssigned_to());
+            l_PreparedStatement.setString(7, complaint.getModified_by());
+            l_PreparedStatement.setString(8, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            l_PreparedStatement.setString(9, complaint.getDue_date().toLocalDateTime().format(formatter));
+            l_PreparedStatement.setString(10, complaint.getIs_active());
+            l_PreparedStatement.setLong(11, complaint.getOpr_id());
+            l_PreparedStatement.setLong(12, complaint.getOrg_id());
+            l_PreparedStatement.setString(13, complaint.getComplaint_id());
+        	
+            int rowsAffected = l_PreparedStatement.executeUpdate();
+                     
+            if (rowsAffected > 0) {
+            	 return ResponseEntity.status(HttpStatus.CREATED).body(
+                         new ResponseMessage("Success", "Complaint Updated successfully", complaint.getDepartment_id())
+                     );
+            } else {
+                return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save department");
+            }
+        } catch (Exception e) {
+            	return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+        } finally {
+            if (l_DBConnection != null)
+                try {
+                    l_DBConnection.close();
+                } catch (Exception e) {
+                    return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+                }
+        }
+	}
 	
 	// Get All Complaints According to  user 
 	public ResponseEntity<Object> getAllActiveDepartments(CommonRequestModel request) {
@@ -229,6 +279,7 @@ public class ComplaintService {
 				l_PreparedStatement.setLong(1, request.getOrgId());
 				l_PreparedStatement.setLong(2, request.getOprId());
 				l_PreparedStatement.setString(3, request.getId());
+				l_PreparedStatement.setString(4, request.getId());
 				
 				l_ResultSet = l_PreparedStatement.executeQuery();
 				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
@@ -244,10 +295,7 @@ public class ComplaintService {
 							typeReference);
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
-			}
-			
-			
-			
+			}						
 		}
 		
 		catch (Exception e) {
@@ -265,7 +313,5 @@ public class ComplaintService {
 		
 		return null;
 	}
-	
 		
-
 }

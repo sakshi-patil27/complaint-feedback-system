@@ -123,8 +123,7 @@ public class ComplaintService {
 	    }
 	}
 	
-	// function to update status
-	public ResponseEntity<Object> update(CommonRequestModel request) {
+	
 	
 	// Get All Complaints According to  user 
 	public ResponseEntity<Object> getAllActiveDepartments(CommonRequestModel request) {

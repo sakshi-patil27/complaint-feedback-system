@@ -1,5 +1,7 @@
 package com.complaintandfeedback.Controller;
 
+import java.sql.SQLException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +24,7 @@ public class ComplaintController {
 	
 	// Save new Complaint
     @PostMapping("/saveComplaint")
-    public ResponseEntity<Object> saveComplaint(@Valid @RequestBody Complaint complaint) {
+    public ResponseEntity<Object> saveComplaint(@Valid @RequestBody Complaint complaint) throws SQLException {
         return complaintService.saveComplaint(complaint);
     }
 	

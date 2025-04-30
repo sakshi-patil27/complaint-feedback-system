@@ -3,6 +3,7 @@ package com.complaintandfeedback.Service;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -18,12 +19,16 @@ import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.Complaint;
+import com.complaintandfeedback.Model.ComplaintStatusHistory;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class ComplaintService {
+	
+	@Autowired
+	private ComplaintStatusHistoryService complaintStatusHistoryService;
 
 	@Autowired
     private CommonUtils commonUtils;
@@ -34,13 +39,13 @@ public class ComplaintService {
 	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	
 	// Save Complaint
-	public ResponseEntity<Object> saveComplaint(Complaint complaint) {
+	public ResponseEntity<Object> saveComplaint(Complaint complaint) throws SQLException {
 	    
 	    Connection l_DBConnection = null;
 	    
 	    try {
 	        l_DBConnection = l_DataSource.getConnection();
-
+	        l_DBConnection.setAutoCommit(false);
 	        String complaintId = "COMP" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 	        complaint.setComplaint_id(complaintId);
 
@@ -74,26 +79,52 @@ public class ComplaintService {
 	        l_PreparedStatement.setLong(15, complaint.getOpr_id());
 
 	        int rowsAffected = l_PreparedStatement.executeUpdate();
-
+	        
 	        if (rowsAffected > 0) {
+	        	
+	        	//Also creating a record in the Complaint status history table
+		        
+		        ComplaintStatusHistory complaintService = new ComplaintStatusHistory();
+		        
+		        complaintService.setComplaint_id(complaintId);
+		        complaintService.setFrom_status("");
+		        complaintService.setTo_status(complaint.getStatus());
+		        complaintService.setReason("");		        
+		        complaintService.setChanged_by(complaint.getCreated_by());		        
+		        
+		        ResponseEntity<Object> response =complaintStatusHistoryService.saveComplaintStatusHistory(complaintService,l_DBConnection);
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.CREATED)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+	        	
+		        l_DBConnection.commit();
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
 	                    new ResponseMessage("Success", "Complaint saved successfully", complaintId)
 	            );
 	        } else {
+	        	l_DBConnection.rollback();
 	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
 	        }
+	        	        
 	    } catch (Exception e) {
+	    	l_DBConnection.rollback();
 	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 	    } finally {
 	        if (l_DBConnection != null) {
 	            try {
 	                l_DBConnection.close();
 	            } catch (Exception e) {
+	            	l_DBConnection.rollback();
 	                return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 	            }
 	        }
 	    }
 	}
+	
+	// function to update status
+	public ResponseEntity<Object> update(CommonRequestModel request) {
 	
 	// Get All Complaints According to  user 
 	public ResponseEntity<Object> getAllActiveDepartments(CommonRequestModel request) {
@@ -125,7 +156,6 @@ public class ComplaintService {
 			if (l_ResultSet.next()) {
 			    roleName = l_ResultSet.getString("role_name");
 			    departmentId = l_ResultSet.getString("department_id");
-			    //accountId = l_ResultSet.getString("account_id");
 			    if(roleName == null || roleName.isBlank()) {
 			    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Role not Found");
 			    }
@@ -216,6 +246,8 @@ public class ComplaintService {
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
 			}
+			
+			
 			
 		}
 		

@@ -6,8 +6,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
-import javax.sql.DataSource;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +31,7 @@ public class ComplaintStatusHistoryService {
 	        PreparedStatement pstmt = l_DBConnection.prepareStatement(insertQuery);
 	        String reason = "Deferred".equalsIgnoreCase(complaintStatusHistory.getTo_status()) 
 	        	    ? complaintStatusHistory.getReason() 
-	        	    : null;
+	        	    : "";
 	        
 
 	        pstmt.setString(1, complaintStatusHistoryId);

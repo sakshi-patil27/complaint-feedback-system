@@ -40,7 +40,9 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/send-otp", "/api/auth/verify-otp","/api/auth/forget-password","/api/departments/getAllDepartment","/api/roles/getAllRole").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/send-otp", "/api/auth/verify-otp"
+                		,"/api/auth/forget-password"
+                		,"/api/departments/getAllDepartment","/api/roles/getAllRole","/api/organdopr/getAllOrgs","/api/organdopr/getAllOprs","/api/auth/update").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )

@@ -26,12 +26,9 @@ public class JwtTokenProvider {
 
 	public String generateToken(Authentication authentication) {
 		Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-
-		// Convert roles to List<String>
 		List<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).toList();
-
-		return Jwts.builder().setSubject(authentication.getName()) // email or username
-				.claim("roles", roles) // 🔐 Add roles to token
+		return Jwts.builder().setSubject(authentication.getName()) 
+				.claim("roles", roles)
 				.setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
 				.signWith(SignatureAlgorithm.HS256, jwtSecret).compact();
 	}
@@ -51,7 +48,6 @@ public class JwtTokenProvider {
 
 	public List<String> getRolesFromToken(String token) {
 		Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
-
 		return claims.get("roles", List.class);
 	}
 

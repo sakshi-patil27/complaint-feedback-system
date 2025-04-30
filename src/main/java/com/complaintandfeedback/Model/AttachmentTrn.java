@@ -1,8 +1,10 @@
 package com.complaintandfeedback.Model;
 
-import jakarta.persistence.*;
-import lombok.*;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 @Data
@@ -16,6 +18,6 @@ public class AttachmentTrn {
     private String Stored_file_name;
     private String Uploaded_file_name;
     private String uploaded_by;
-    private LocalDateTime uploaded_on = LocalDateTime.now();
+    private Timestamp uploaded_on;
     private String l_encrypted_file;
 } 

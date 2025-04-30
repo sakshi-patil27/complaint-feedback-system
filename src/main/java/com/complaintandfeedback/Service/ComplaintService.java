@@ -2,8 +2,10 @@ package com.complaintandfeedback.Service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -17,6 +19,8 @@ import org.springframework.stereotype.Service;
 import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.Complaint;
 import com.complaintandfeedback.Model.ResponseMessage;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class ComplaintService {
@@ -98,13 +102,124 @@ public class ComplaintService {
 		JSONArray l_ModuleArr = new JSONArray();
 		
 		try {
+			// Get role of the user 
 			l_DBConnection = l_DataSource.getConnection();
 			
-			String l_query = "SELECT role_name FROM  WHERE  ";
+			String l_Query = "SELECT r.role_name, u.department_id " +
+	                 "FROM account_user_mst u " +
+	                 "JOIN roles_mst r ON u.role_id = r.role_id " +
+	                 "WHERE u.account_id = ?";
+
+			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(
+			        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		
+			// Use parameter binding to avoid SQL injection
+			l_PreparedStatement.setString(1, request.getId());
+		
+			ResultSet l_ResultSet = l_PreparedStatement.executeQuery();		
 			
-			// String l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES'AND org_id = '"+request.getOrgId()+"' AND opr_id='"+request.getOprId()+"'";
+			String roleName = null;
+			String departmentId = null;
+			//String accountId = null;
+
+			if (l_ResultSet.next()) {
+			    roleName = l_ResultSet.getString("role_name");
+			    departmentId = l_ResultSet.getString("department_id");
+			    //accountId = l_ResultSet.getString("account_id");
+			    if(roleName == null || roleName.isBlank()) {
+			    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Role not Found");
+			    }
+			    if(departmentId == null || departmentId.isBlank()) {
+			    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Department not Found");
+			    }
+			}
 			
-		} catch (Exception e) {
+			//For Admin role all the complaints are visible
+			if("ADMIN".equals(roleName)) {
+				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
+						+ "org_id = ? AND opr_id = ?";
+				l_PreparedStatement = l_DBConnection.prepareStatement(
+				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			
+				// Use parameter binding to avoid SQL injection
+				l_PreparedStatement.setLong(1, request.getOrgId());
+				l_PreparedStatement.setLong(2, request.getOprId());
+				
+				l_ResultSet = l_PreparedStatement.executeQuery();
+				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
+				
+				if (l_ModuleArr.isEmpty()) {
+					return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
+							"NO DATA FOUND");
+				} else {
+					TypeReference<List<Complaint>> typeReference = new TypeReference<List<Complaint>>() {
+					};
+					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
+							typeReference);
+					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
+				}
+			}
+						
+			//For HOD user
+			if("HOD".equals(roleName)) {
+				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
+						+ "org_id = ? AND opr_id = ? AND department_id = ?";  
+				l_PreparedStatement = l_DBConnection.prepareStatement(
+				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			
+				// Use parameter binding to avoid SQL injection
+				l_PreparedStatement.setLong(1, request.getOrgId());
+				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setString(3, departmentId);
+				
+				l_ResultSet = l_PreparedStatement.executeQuery();
+				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
+				
+				if (l_ModuleArr.isEmpty()) {
+					return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
+							"NO DATA FOUND");
+				} 
+				else {
+					TypeReference<List<Complaint>> typeReference = new TypeReference<List<Complaint>>() {
+					};
+					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
+							typeReference);
+					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
+				}
+			}
+						
+			
+			//For Employee	
+			if("CLIENT".equals(roleName)) {
+				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
+						+ "org_id = ? AND opr_id = ? AND (created_by = ? OR assigned_to = ?)" ;
+				l_PreparedStatement = l_DBConnection.prepareStatement(
+				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			
+				// Use parameter binding to avoid SQL injection
+				l_PreparedStatement.setLong(1, request.getOrgId());
+				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setString(3, request.getId());
+				
+				l_ResultSet = l_PreparedStatement.executeQuery();
+				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
+				
+				if (l_ModuleArr.isEmpty()) {
+					return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
+							"NO DATA FOUND");
+				} 
+				else {
+					TypeReference<List<Complaint>> typeReference = new TypeReference<List<Complaint>>() {
+					};
+					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
+							typeReference);
+					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
+				}
+			}
+			
+		}
+		
+		catch (Exception e) {
 			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 		}
 

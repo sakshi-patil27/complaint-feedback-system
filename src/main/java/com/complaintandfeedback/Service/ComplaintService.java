@@ -160,7 +160,7 @@ public class ComplaintService {
                      
             if (rowsAffected > 0) {		        
 		        l_DBConnection.commit(); 
-		        return ResponseEntity.status(HttpStatus.CREATED).body(
+		        return ResponseEntity.status(HttpStatus.OK).body(
                          new ResponseMessage("Success", "Complaint Updated successfully", complaint.getComplaint_id())
                      );
             } 
@@ -235,7 +235,7 @@ public class ComplaintService {
 		        }
 		        
 		        l_DBConnection.commit(); 
-		        return ResponseEntity.status(HttpStatus.CREATED).body(
+		        return ResponseEntity.status(HttpStatus.OK).body(
                          new ResponseMessage("Success", "Complaint Updated successfully", complaint.getComplaint_id())
                      );
             } else {

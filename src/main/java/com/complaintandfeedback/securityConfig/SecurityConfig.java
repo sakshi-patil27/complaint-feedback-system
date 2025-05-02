@@ -1,9 +1,11 @@
 package com.complaintandfeedback.securityConfig;
 
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,8 +18,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpMethod;
 
 @Configuration
 public class SecurityConfig {
@@ -27,7 +29,6 @@ public class SecurityConfig {
 
     @Autowired
     private UserDetailsService userDetailsService;
-
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -40,24 +41,33 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/send-otp", "/api/auth/verify-otp"
-                		,"/api/auth/forget-password"
-                		,"/api/departments/getAllDepartment","/api/roles/getAllRole","/api/organdopr/getAllOrgs","/api/organdopr/getAllOprs","/api/auth/update").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers(
+                    "/api/auth/register", "/api/auth/login", "/api/auth/send-otp", "/api/auth/verify-otp",
+                    "/api/auth/forget-password", "/api/departments/getAllDepartment", "/api/roles/getAllRole",
+                    "/api/organdopr/getAllOrgs", "/api/organdopr/getAllOprs", "/api/auth/update",
+                    "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Unauthorized - Invalid Token");
-                })
-            )
+//            .exceptionHandling(ex -> {
+//                ex.authenticationEntryPoint((request, response, exception) -> {
+//                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                    response.setContentType("application/json");
+//                    response.getWriter().write("{\"error\": \"" + exception.getMessage() + "\"}");
+//                });
+//                ex.accessDeniedHandler((request, response, accessDeniedException) -> {
+//                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+//                    response.setContentType("application/json");
+//                    response.getWriter().write("{\"error\": \"" + accessDeniedException.getMessage() + "\"}");
+//                });
+//            })
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .formLogin(form -> form.disable());
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,6 +68,26 @@ public class AuthenticationService {
 			return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Email already exists");
 		}
 		
+//		String roleIdQuery = "SELECT role_id FROM roles_mst WHERE LOWER(role_name) = LOWER(?) AND org_id = ? AND opr_id = ?";
+//		Integer deptHeadRoleId = jdbcTemplate.queryForObject(roleIdQuery, Integer.class, "DEPARTMENT_HEAD",accountUser.getOrgId(),accountUser.getOprId());
+//		// Step 3: If user is trying to register as department head, check if one already exists
+//		if (Objects.equals(accountUser.getRoleId(), deptHeadRoleId)) {
+//			String headExistsQuery = "SELECT COUNT(*) FROM account_user_mst WHERE department_id = ? AND role_id = ? AND org_id = ? AND opr_id = ?";
+//			Integer headCount = jdbcTemplate.queryForObject(
+//					headExistsQuery,
+//					Integer.class,
+//					accountUser.getDepartmentId(),
+//					deptHeadRoleId,
+//					accountUser.getOrgId(),
+//					accountUser.getOprId()
+//			);
+//			if (headCount != null && headCount > 0) {
+//				return commonUtils.responseErrorHeader(null, null, HttpStatus.CONFLICT,
+//						"Department Head already exists for this department in the same organization and operator");
+//			}
+//		}
+//
+//		
 		// Generate accountId
 		String accountId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
 		accountUser.setAccountId(accountId);
@@ -84,7 +105,11 @@ public class AuthenticationService {
 	}
 	
 	public ResponseEntity<?> login(String email, String password) {
-		String sql = "SELECT * FROM account_user_mst WHERE email = ? AND is_active = 'YES'";
+		String sql = "SELECT a.account_id,a.password,a.org_id,a.opr_id,a.role_id,a.name,org.org_name as l_org_name,roles_mst.role_name AS l_role_name "
+				+ "FROM account_user_mst a"
+				+ " LEFT JOIN org ON org.org_id=a.org_id"
+				+ " LEFT JOIN roles_mst ON roles_mst.role_id=a.role_id"
+				+ " WHERE a.email = ? AND a.is_active = 'YES'";
 
 		try {
 			Map<String, Object> userMap = jdbcTemplate.queryForMap(sql, email);
@@ -103,7 +128,7 @@ public class AuthenticationService {
 			                Long oprId = userMap.get("opr_id") != null ? ((Number) userMap.get("opr_id")).longValue() : null;
 				AuthenticationResponse response = new AuthenticationResponse(true, "Login successful", token,
 						(String) userMap.get("account_id"), (String) userMap.get("role_id"),
-						(String) userMap.get("name"),orgId,oprId);
+						(String) userMap.get("name"),orgId,oprId,(String) userMap.get("l_org_name"),(String) userMap.get("l_role_name"));
 
 				return new ResponseEntity<>(response, HttpStatus.OK);
 			} else {
@@ -115,11 +140,11 @@ public class AuthenticationService {
 	}
 
 	public ResponseEntity<?> updateUser(AccountUser updateUserRequest) {
-		String updateQuery = "UPDATE account_user_mst SET name = ?, phone_no = ?, department_id = ?, role_id = ?, modified_by = ?, modified_on = ? WHERE account_id = ?";
-
+		String updateQuery = "UPDATE account_user_mst SET name = ?, phone_no = ?, department_id = ?, role_id = ?, modified_by = ?, modified_on = ?  ,password = ? WHERE account_id = ?";
+		updateUserRequest.setPassword(passwordEncoder.encode(updateUserRequest.getPassword()));
 		int updated = jdbcTemplate.update(updateQuery, updateUserRequest.getName(), updateUserRequest.getPhoneNo(),
 				updateUserRequest.getDepartmentId(), updateUserRequest.getRoleId(), updateUserRequest.getModifiedBy(),
-				LocalDateTime.now().format(formatter), updateUserRequest.getAccountId());
+				LocalDateTime.now().format(formatter),updateUserRequest.getPassword(), updateUserRequest.getAccountId());
 
 		if (updated > 0) {
 			return ResponseEntity.status(HttpStatus.OK)

@@ -4,29 +4,33 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.complaintandfeedback.Service.CommonUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	@Autowired
+	private CommonUtils commonUtils;
+	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
 
-	@Autowired
-	private UserDetailsService userDetailsService;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -55,7 +59,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 
 		} else {
-			System.out.println("Token invalid or missing.");
+			    // Token is invalid, returning an error response
+			    Exception exception = new Exception("Invalid or missing token");
+			    ResponseEntity<Object> responseEntity = commonUtils.responseErrorHeader(
+			        exception, 
+			        "JWT", 
+			        HttpStatus.UNAUTHORIZED, 
+			        "Invalid or missing token"
+			    );
+
+			    // Set response properties
+			    response.setStatus(responseEntity.getStatusCodeValue());
+			    response.setContentType("application/json");
+
+			    // Convert Java object to JSON using ObjectMapper
+			    ObjectMapper mapper = new ObjectMapper();
+			    String jsonResponse = mapper.writeValueAsString(responseEntity.getBody());
+
+			    response.getWriter().write(jsonResponse);
+			    return; // Exit after returning the respon
+
 		}
 
 		chain.doFilter(request, response);

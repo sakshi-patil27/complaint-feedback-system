@@ -1,16 +1,21 @@
 package com.complaintandfeedback.Service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.sql.DataSource;
+
+import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -20,15 +25,17 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.ComplaintAndFeedbackApplication;
 import com.complaintandfeedback.DTO.AuthenticationResponse;
+import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.AccountUser;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.complaintandfeedback.securityConfig.JwtTokenProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class AuthenticationService {
@@ -44,7 +51,9 @@ public class AuthenticationService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
-
+	@Autowired
+	private DataSource l_DataSource;
+	
 	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
 	
@@ -90,16 +99,16 @@ public class AuthenticationService {
 //		
 		// Generate accountId
 		String accountId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-		accountUser.setAccountId(accountId);
-		accountUser.setCreatedOn(LocalDateTime.now().format(formatter));
-		accountUser.setIsActive("YES");
+		accountUser.setAccount_id(accountId);
+		accountUser.setCreated_on(LocalDateTime.now().format(formatter));
+		accountUser.setIs_active("YES");
 		accountUser.setPassword(passwordEncoder.encode(accountUser.getPassword()));
 		// Insert user
 		String insertQuery = "INSERT INTO account_user_mst (account_id, name, email, phone_no, password, department_id, role_id, org_id, opr_id, created_by, created_on, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-		jdbcTemplate.update(insertQuery, accountUser.getAccountId(), accountUser.getName(), accountUser.getEmail(),
-				accountUser.getPhoneNo(), accountUser.getPassword(), accountUser.getDepartmentId(),
-				accountUser.getRoleId(), accountUser.getOrgId(), accountUser.getOprId(), accountUser.getCreatedBy(),
-				accountUser.getCreatedOn(), accountUser.getIsActive());
+		jdbcTemplate.update(insertQuery, accountUser.getAccount_id(), accountUser.getName(), accountUser.getEmail(),
+				accountUser.getPhone_no(), accountUser.getPassword(), accountUser.getDepartment_id(),
+				accountUser.getRole_id(), accountUser.getOrg_id(), accountUser.getOpr_id(), accountUser.getCreated_by(),
+				accountUser.getCreated_on(), accountUser.getIs_active());
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseMessage("Success","User registered successfully",accountId));
 	}
@@ -142,13 +151,13 @@ public class AuthenticationService {
 	public ResponseEntity<?> updateUser(AccountUser updateUserRequest) {
 		String updateQuery = "UPDATE account_user_mst SET name = ?, phone_no = ?, department_id = ?, role_id = ?, modified_by = ?, modified_on = ?  ,password = ? WHERE account_id = ?";
 		updateUserRequest.setPassword(passwordEncoder.encode(updateUserRequest.getPassword()));
-		int updated = jdbcTemplate.update(updateQuery, updateUserRequest.getName(), updateUserRequest.getPhoneNo(),
-				updateUserRequest.getDepartmentId(), updateUserRequest.getRoleId(), updateUserRequest.getModifiedBy(),
-				LocalDateTime.now().format(formatter),updateUserRequest.getPassword(), updateUserRequest.getAccountId());
+		int updated = jdbcTemplate.update(updateQuery, updateUserRequest.getName(), updateUserRequest.getPhone_no(),
+				updateUserRequest.getDepartment_id(), updateUserRequest.getRole_id(), updateUserRequest.getModified_by(),
+				LocalDateTime.now().format(formatter),updateUserRequest.getPassword(), updateUserRequest.getAccount_id());
 
 		if (updated > 0) {
 			return ResponseEntity.status(HttpStatus.OK)
-					.body(new ResponseMessage("Success","User updated successfully",updateUserRequest.getAccountId()));
+					.body(new ResponseMessage("Success","User updated successfully",updateUserRequest.getAccount_id()));
 		} else {
 			return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND,"User not found");
 		}
@@ -199,6 +208,51 @@ public class AuthenticationService {
 
         return false; 
     }
+
+	public ResponseEntity<Object> getUserByDepartment(CommonRequestModel request) {
+		
+		Connection l_DBConnection = null;
+		JSONArray l_ModuleArr = new JSONArray();	
+		try {
+			l_DBConnection = l_DataSource.getConnection();
+			String l_Query = "SELECT * FROM account_user_mst WHERE is_active = 'YES' AND "
+					+ "org_id = ? AND opr_id = ? AND department_id = ?";
+			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(
+			        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		
+			// Use parameter binding to avoid SQL injection
+			l_PreparedStatement.setLong(1, request.getOrgId());
+			l_PreparedStatement.setLong(2, request.getOprId());
+			l_PreparedStatement.setString(3, request.getId());
+			
+			ResultSet l_ResultSet = l_PreparedStatement.executeQuery();
+			l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
+			
+			if (l_ModuleArr.isEmpty()) {
+				return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
+						"NO DATA FOUND");
+			} else {
+				TypeReference<List<AccountUser>> typeReference = new TypeReference<List<AccountUser>>() {
+				};
+				List<AccountUser> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
+						typeReference);
+				return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
+			}
+		}
+		catch (Exception e) {
+			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+		}
+
+		finally {
+			if (l_DBConnection != null)
+				try {
+					l_DBConnection.close();
+				} catch (Exception e) {
+					return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+				}
+		}
+		
+	}
 
 
 }

@@ -1,14 +1,17 @@
 package com.complaintandfeedback.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.AccountUser;
 import com.complaintandfeedback.Service.AuthenticationService;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -74,6 +77,14 @@ public class AuthenticationController {
             return new ResponseEntity<>("Password reset successful.", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Failed to reset password.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        }              
     }
+    
+   // get list of users according to the department 
+   @PostMapping("/getUserByDepartment")
+   public ResponseEntity<Object> getUserByDepartment(@RequestBody CommonRequestModel commonRequestModel){
+	   return authenticationService.getUserByDepartment(commonRequestModel);
+   }
+    
+    
 }

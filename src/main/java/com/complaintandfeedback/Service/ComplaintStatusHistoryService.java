@@ -2,6 +2,7 @@ package com.complaintandfeedback.Service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -56,7 +57,41 @@ public class ComplaintStatusHistoryService {
 	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
 	    }
 	}
+	
+	public ResponseEntity<Object> updateComplaintStatusHistory(ComplaintStatusHistory complaintStatusHistory, Connection l_DBConnection) throws SQLException{
+		
+		try {
+			
+			String sql = "Update complaint_status_history "+ "SET from_status = ? , to_status = ? , "
+					+ "reason = ? , changed_by = ?, changed_on = ?" + "WHERE complaint_id = ?";
+			
+			PreparedStatement pstmt = l_DBConnection.prepareStatement(sql);
+			String reason = "Deferred".equalsIgnoreCase(complaintStatusHistory.getTo_status()) 
+							? complaintStatusHistory.getReason() 
+							: "";
+			
+			pstmt.setString(1, complaintStatusHistory.getFrom_status());
+	        pstmt.setString(2, complaintStatusHistory.getTo_status());
+	    	pstmt.setString(3, reason);
+	        pstmt.setString(4, complaintStatusHistory.getChanged_by());
+	        pstmt.setString(5, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+	        pstmt.setString(1, complaintStatusHistory.getComplaint_id());
+			
+	        int rowsAffected = pstmt.executeUpdate();
 
+	        if (rowsAffected > 0) {
+	            return ResponseEntity.status(HttpStatus.CREATED)
+	                    .body(new ResponseMessage("Success", "Complaint status saved successfully", complaintStatusHistory.getComplaint_status_history_id()));
+	        } else {
+	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint status history");
+	        }
+
+	    } catch (Exception e) {
+	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+	    }
+		
+	}
+	
 
 }
 

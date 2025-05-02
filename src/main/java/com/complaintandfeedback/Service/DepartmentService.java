@@ -102,8 +102,7 @@ public class DepartmentService {
             int rowsAffected = l_PreparedStatement.executeUpdate();
             if (rowsAffected > 0) {
             	 return ResponseEntity.status(HttpStatus.CREATED).body(
-                         new ResponseMessage("Success", "Department Updated successfully", department.getDepartment_id())
-                     );
+            			 new ResponseMessage("Success", "Department Updated successfully", department.getDepartment_id()));
             } else {
                 return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save department");
             }

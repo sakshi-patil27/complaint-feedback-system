@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -127,12 +128,13 @@ public class ComplaintService {
 	
 	
 	// Update existing complaint
-	public ResponseEntity<Object> updateComplaint(@Valid Complaint complaint) {	
+	public ResponseEntity<Object> updateComplaint(@Valid Complaint complaint) throws SQLException {	
 		
 		Connection l_DBConnection = null;
         try {
         	
         	l_DBConnection = l_DataSource.getConnection();
+        	l_DBConnection.setAutoCommit(false);
 
             String sql = "UPDATE complaint_trn SET subject = ?, description = ?, priority = ?, status = ?, " +
                          "department_id = ?, assigned_to = ?, modified_by = ?, modified_on = ?, due_date = ?, " +
@@ -156,14 +158,18 @@ public class ComplaintService {
         	
             int rowsAffected = l_PreparedStatement.executeUpdate();
                      
-            if (rowsAffected > 0) {
-            	 return ResponseEntity.status(HttpStatus.CREATED).body(
-                         new ResponseMessage("Success", "Complaint Updated successfully", complaint.getDepartment_id())
+            if (rowsAffected > 0) {		        
+		        l_DBConnection.commit(); 
+		        return ResponseEntity.status(HttpStatus.CREATED).body(
+                         new ResponseMessage("Success", "Complaint Updated successfully", complaint.getComplaint_id())
                      );
-            } else {
-                return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save department");
+            } 
+            else {
+            	l_DBConnection.rollback();
+                return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to Update Complaint");
             }
         } catch (Exception e) {
+        		l_DBConnection.rollback();
             	return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
         } finally {
             if (l_DBConnection != null)
@@ -175,8 +181,84 @@ public class ComplaintService {
         }
 	}
 	
+	// Update Status
+	public ResponseEntity<Object> updateStatus(@Valid Complaint complaint) throws SQLException{
+		Connection l_DBConnection = null;
+        try {
+        	
+        	l_DBConnection = l_DataSource.getConnection();
+        	l_DBConnection.setAutoCommit(false);
+        	
+        	//Get previous status of complaint before updating
+        	String sql = "Select status from complaint_trn " + "WHERE complaint_id = ?";
+        	
+        	PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+        	
+        	l_PreparedStatement.setString(1, complaint.getComplaint_id());
+        	
+        	ResultSet l_ResultSet = l_PreparedStatement.executeQuery();	
+        	
+        	String previousStatus = null;
+        	if(l_ResultSet.next()) {
+        		previousStatus = l_ResultSet.getString("status");
+        		if(previousStatus == null || previousStatus.isBlank()) {
+        			return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Complaint not found");
+        		}
+        	}
+
+            sql = "UPDATE complaint_trn SET status = ? " + "WHERE complaint_id = ?";
+
+            l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+
+            l_PreparedStatement.setString(1, complaint.getStatus());
+            l_PreparedStatement.setString(2, complaint.getComplaint_id());
+        	
+            int rowsAffected = l_PreparedStatement.executeUpdate();
+                     
+            if (rowsAffected > 0) {
+            	
+            	//Also creating a record in the Complaint status history table
+		        
+		        ComplaintStatusHistory complaintService = new ComplaintStatusHistory();
+		        
+		        complaintService.setComplaint_id(complaint.getComplaint_id());
+		        complaintService.setFrom_status(previousStatus);
+		        complaintService.setTo_status(complaint.getStatus());
+		        complaintService.setReason("");		        
+		        complaintService.setChanged_by(complaint.getCreated_by());		        
+		        
+		        ResponseEntity<Object> response =complaintStatusHistoryService.saveComplaintStatusHistory(complaintService,l_DBConnection);
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.CREATED)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		        
+		        l_DBConnection.commit(); 
+		        return ResponseEntity.status(HttpStatus.CREATED).body(
+                         new ResponseMessage("Success", "Complaint Updated successfully", complaint.getComplaint_id())
+                     );
+            } else {
+            	l_DBConnection.rollback();
+                return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save department");
+            }
+        } catch (Exception e) {
+        		l_DBConnection.rollback();
+            	return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+        } finally {
+            if (l_DBConnection != null)
+                try {
+                    l_DBConnection.close();
+                } catch (Exception e) {
+                    return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+                }
+        }
+		
+	}
+	
+	
 	// Get All Complaints According to  user 
-	public ResponseEntity<Object> getAllActiveDepartments(CommonRequestModel request) {
+	public ResponseEntity<Object> getAllActiveComplaints(CommonRequestModel request) {
 		
 		Connection l_DBConnection = null;
 		JSONArray l_ModuleArr = new JSONArray();
@@ -296,6 +378,7 @@ public class ComplaintService {
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
 			}						
+			return commonUtils.responseErrorHeader(null, null, HttpStatus.FORBIDDEN, "Unauthorized role or role not handled");
 		}
 		
 		catch (Exception e) {
@@ -310,8 +393,76 @@ public class ComplaintService {
 					return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 				}
 		}	
-		
-		return null;
 	}
+
+
+	public ResponseEntity<Object> getComplaintById(CommonRequestModel request) {
 		
+		Connection l_DBConnection = null;
+		//JSONArray l_ModuleArr = new JSONArray();
+		
+		try {
+			l_DBConnection = l_DataSource.getConnection();
+			
+			String sql = "SELECT * from complaint_trn WHERE complaint_id = ? AND opr_id = ? AND org_id = ? "
+					+ "AND is_active = 'YES'";
+			
+			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(
+					sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			
+			l_PreparedStatement.setString(1, request.getId());
+			l_PreparedStatement.setLong(2, request.getOprId());
+			l_PreparedStatement.setLong(3, request.getOrgId());
+			
+			ResultSet l_ResultSet = l_PreparedStatement.executeQuery();			
+			Complaint complaint = null;
+
+			if (l_ResultSet.next()) {
+			    complaint = new Complaint();
+			    
+			    // Mapping result set columns to Complaint object fields
+			    complaint.setComplaint_id(l_ResultSet.getString("complaint_id"));
+			    complaint.setOrg_id(l_ResultSet.getLong("org_id"));
+			    complaint.setOpr_id(l_ResultSet.getLong("opr_id"));
+			    complaint.setSubject(l_ResultSet.getString("subject"));
+			    complaint.setDescription(l_ResultSet.getString("description"));
+			    complaint.setPriority(l_ResultSet.getString("priority"));
+			    complaint.setStatus(l_ResultSet.getString("status"));
+			    complaint.setDepartment_id(l_ResultSet.getString("department_id"));
+			    complaint.setCreated_by(l_ResultSet.getString("created_by"));
+			    complaint.setAssigned_to(l_ResultSet.getString("assigned_to"));
+			    
+			    // Mapping Timestamp fields
+			    complaint.setCreated_on(l_ResultSet.getTimestamp("created_on"));
+			    complaint.setModified_on(l_ResultSet.getTimestamp("modified_on"));
+			    
+			    // Due date may be null, so check before mapping
+			    Timestamp dueDate = l_ResultSet.getTimestamp("due_date");
+			    complaint.setDue_date(dueDate != null ? dueDate : null);
+			    
+			    complaint.setModified_by(l_ResultSet.getString("modified_by"));
+			    complaint.setIs_active(l_ResultSet.getString("is_active"));
+			}
+						
+			if (complaint == null) {
+			    return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Complaint not found");
+			} else {
+			    return ResponseEntity.status(HttpStatus.OK).body(complaint);
+			}
+		}
+		catch (Exception e) {
+			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+		}
+
+		finally {
+			if (l_DBConnection != null)
+				try {
+					l_DBConnection.close();
+				} catch (Exception e) {
+					return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+				}
+		}
+		
+	}
+				
 }

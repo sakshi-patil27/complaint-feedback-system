@@ -5,14 +5,12 @@ import java.sql.SQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Model.Complaint;
-import com.complaintandfeedback.Model.Department;
 import com.complaintandfeedback.Service.ComplaintService;
 
 import jakarta.validation.Valid;
@@ -31,15 +29,27 @@ public class ComplaintController {
     }
     
     // Update existing Complaint
-    @PutMapping("/updateComplaint")
-    public ResponseEntity<Object> updateComplaint(@Valid @RequestBody Complaint complaint) {
+    @PostMapping("/updateComplaint")
+    public ResponseEntity<Object> updateComplaint(@Valid @RequestBody Complaint complaint) throws SQLException {
         return complaintService.updateComplaint(complaint);
     }
 	
+    //Update status of complaint
+    @PostMapping("/updateStatus")
+    public ResponseEntity<Object> updateStatus(@Valid @RequestBody Complaint complaint) throws SQLException {
+    	return complaintService.updateStatus(complaint);
+    }
+    
     // Get all active Complaint
     @PostMapping("/getAllComplaint")
     public ResponseEntity<Object> getAllActiveComplaint(@RequestBody CommonRequestModel request) {
-        return complaintService.getAllActiveDepartments(request);
-    }
+        return complaintService.getAllActiveComplaints(request);
+    }    
+    
+    // get Complaint By id
+    @PostMapping("/getComplaintById")
+    public ResponseEntity<Object> getComplaintById(@RequestBody CommonRequestModel request) {
+        return complaintService.getComplaintById(request);
+    } 
     
 }

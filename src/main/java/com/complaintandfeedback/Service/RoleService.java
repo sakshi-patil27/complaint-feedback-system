@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
-import com.complaintandfeedback.Model.Department;
 import com.complaintandfeedback.Model.Role;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

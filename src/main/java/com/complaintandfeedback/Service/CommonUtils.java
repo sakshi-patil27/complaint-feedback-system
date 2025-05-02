@@ -32,31 +32,30 @@ import com.complaintandfeedback.Model.ResponseHeaderModel;
 
 @Component
 public class CommonUtils {
-	public ResponseEntity<Object> responseErrorHeader(Exception e, String errorPattern, HttpStatus responseCode,
-			String errorMsg) {
-		ResponseHeaderModel ResponseHeaderModel = new ResponseHeaderModel();
-		ResponseHeaderModel.setRespCode(responseCode.toString());
-		ResponseHeaderModel.setStatusMsg("Failed");
+	public ResponseEntity<Object> responseErrorHeader(Exception e, String errorPattern, HttpStatus responseCode, String errorMsg) {
+	    ResponseHeaderModel responseHeaderModel = new ResponseHeaderModel();
+	    responseHeaderModel.setRespCode(responseCode.toString());
+	    responseHeaderModel.setStatusMsg("Failed");
 
-		if (e != null) {
-			StackTraceElement[] stsckArr = e.getStackTrace();
-			String errorClass = e.getMessage();
-			if (errorPattern != null && !errorPattern.trim().equals("")) {
-				for (StackTraceElement stkline : stsckArr) {
-					if (stkline.getFileName()!=null && stkline.getFileName().contains(errorPattern)) {
-						errorClass = stkline.getFileName()+" "+stkline.getMethodName() + " Line(" + stkline.getLineNumber() + ")";
-						break;
-					}
-				}
-			}
+	    if (e != null) {
+	        StackTraceElement[] stackArr = e.getStackTrace();
+	        String errorClass = e.getMessage();
+	        if (errorPattern != null && !errorPattern.trim().equals("")) {
+	            for (StackTraceElement stkLine : stackArr) {
+	                if (stkLine.getFileName() != null && stkLine.getFileName().contains(errorPattern)) {
+	                    errorClass = stkLine.getFileName() + " " + stkLine.getMethodName() + " Line(" + stkLine.getLineNumber() + ")";
+	                    break;
+	                }
+	            }
+	        }
+	        responseHeaderModel.setErrMsg(errorClass + "*--*--" + e.toString());
+	    } else {
+	        responseHeaderModel.setErrMsg(errorMsg == null ? "Bad request" : errorMsg);
+	    }
 
-			ResponseHeaderModel.setErrMsg(errorClass + "*--*--" + e.toString());
-		} else {
-			ResponseHeaderModel.setErrMsg(errorMsg == null ? "Bad request" : errorMsg);
-		}
-
-		return ResponseEntity.status(responseCode).body(ResponseHeaderModel);
+	    return ResponseEntity.status(responseCode).body(responseHeaderModel);
 	}
+
 
 	public static JSONArray convertToJsonArray(ResultSet resultSet, int notrequiredcols) throws Exception {
 		JSONArray jsonArray = new JSONArray();

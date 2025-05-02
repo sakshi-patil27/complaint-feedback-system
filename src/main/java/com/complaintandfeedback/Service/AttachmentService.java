@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -37,55 +38,67 @@ public class AttachmentService {
 	@Autowired
 	private DataSource l_DataSource;
 
-	public ResponseEntity<Object> saveAttachment(AttachmentTrn attachmentTrn) {
-		Connection l_DBConnection = null;
+	public ResponseEntity<Object> saveAttachments(List<AttachmentTrn> attachmentList) {
+	    Connection l_DBConnection = null;
+	    List<ResponseMessage> responseMessages = new ArrayList<>();
 
-		try {
-			l_DBConnection = l_DataSource.getConnection();
+	    try {
+	        l_DBConnection = l_DataSource.getConnection();
 
-			String attachmentId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-			attachmentTrn.setAttachment_id(attachmentId);
-			String l_File_Path = commonUtils.gFN_Uploaded_File_Path();
-			String l_Storage_File_Name = commonUtils.gFN_Upload_File(attachmentTrn.getL_encrypted_file(),
-					attachmentTrn.getUploaded_file_name(), l_File_Path, attachmentTrn.getEntity_id());
-			// SQL Insert queryl_Query
-			String l_Query = "INSERT INTO attachment_trn (attachment_id,entity_type,entity_id,"
-					+ "file_path,Stored_file_name,Uploaded_file_name,uploaded_by,uploaded_on) "
-					+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+	        String l_File_Path = commonUtils.gFN_Uploaded_File_Path();
+	        String l_Query = "INSERT INTO attachment_trn (attachment_id, entity_type, entity_id, "
+	                + "file_path, Stored_file_name, Uploaded_file_name, uploaded_by, uploaded_on) "
+	                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
+	        PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
 
-			// Set the parameters for the insert query
-			l_PreparedStatement.setString(1, attachmentTrn.getAttachment_id());
-			l_PreparedStatement.setString(2, attachmentTrn.getEntity_type());
-			l_PreparedStatement.setString(3, attachmentTrn.getEntity_id());
-			l_PreparedStatement.setString(4, l_File_Path);
-			l_PreparedStatement.setString(5, l_Storage_File_Name);
-			l_PreparedStatement.setString(6, attachmentTrn.getUploaded_file_name());
-			l_PreparedStatement.setString(7, attachmentTrn.getUploaded_by()); // Assuming createdBy is the same as
-																				// modifiedBy on creation
-			l_PreparedStatement.setString(8,
-					LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+	        for (AttachmentTrn attachmentTrn : attachmentList) {
+	            try {
+	                String attachmentId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+	                attachmentTrn.setAttachment_id(attachmentId);
 
-			int rowsAffected = l_PreparedStatement.executeUpdate();
+	                String l_Storage_File_Name = commonUtils.gFN_Upload_File(
+	                        attachmentTrn.getL_encrypted_file(),
+	                        attachmentTrn.getUploaded_file_name(),
+	                        l_File_Path,
+	                        attachmentTrn.getEntity_id()
+	                );
 
-			if (rowsAffected > 0) {
-				return ResponseEntity.status(HttpStatus.CREATED)
-						.body(new ResponseMessage("Success", "Upload  attachment successfully", attachmentId));
-			} else {
-				return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
-						"Failed to upload the attachment");
-			}
-		} catch (Exception e) {
-			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
-		} finally {
-			if (l_DBConnection != null)
-				try {
-					l_DBConnection.close();
-				} catch (Exception e) {
-					return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
-				}
-		}
+	                l_PreparedStatement.setString(1, attachmentId);
+	                l_PreparedStatement.setString(2, attachmentTrn.getEntity_type());
+	                l_PreparedStatement.setString(3, attachmentTrn.getEntity_id());
+	                l_PreparedStatement.setString(4, l_File_Path);
+	                l_PreparedStatement.setString(5, l_Storage_File_Name);
+	                l_PreparedStatement.setString(6, attachmentTrn.getUploaded_file_name());
+	                l_PreparedStatement.setString(7, attachmentTrn.getUploaded_by());
+	                l_PreparedStatement.setString(8, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+	                int rowsAffected = l_PreparedStatement.executeUpdate();
+
+	                if (rowsAffected > 0) {
+	                    responseMessages.add(new ResponseMessage("Success", "Uploaded successfully", attachmentId));
+	                } else {
+	                    responseMessages.add(new ResponseMessage("Failure", "Upload failed", attachmentTrn.getUploaded_file_name()));
+	                }
+
+	            } catch (Exception ex) {
+	                responseMessages.add(new ResponseMessage("Error", ex.getMessage(), attachmentTrn.getUploaded_file_name()));
+	            }
+	        }
+
+	        return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseMessages);
+
+	    } catch (Exception e) {
+	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+	    } finally {
+	        if (l_DBConnection != null) {
+	            try {
+	                l_DBConnection.close();
+	            } catch (Exception e) {
+	                return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+	            }
+	        }
+	    }
 	}
 
 	public ResponseEntity<Object> getAttachment(CommonRequestModel request) {

@@ -1,6 +1,8 @@
 package com.complaintandfeedback.Model;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +20,6 @@ public class AttachmentTrn {
     private String Stored_file_name;
     private String Uploaded_file_name;
     private String uploaded_by;
-    private Timestamp uploaded_on;
+    private String uploaded_on;
     private String l_encrypted_file;
 } 

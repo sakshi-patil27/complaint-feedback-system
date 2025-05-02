@@ -349,9 +349,36 @@ public class ComplaintService {
 				}
 			}
 						
-			
-			//For Employee	
+			//For Client			
 			if("CLIENT".equals(roleName)) {
+				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
+						+ "org_id = ? AND opr_id = ? AND created_by = ?" ;
+				l_PreparedStatement = l_DBConnection.prepareStatement(
+				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			
+				// Use parameter binding to avoid SQL injection
+				l_PreparedStatement.setLong(1, request.getOrgId());
+				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setString(3, request.getId());
+				
+				l_ResultSet = l_PreparedStatement.executeQuery();
+				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
+				
+				if (l_ModuleArr.isEmpty()) {
+					return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
+							"NO DATA FOUND");
+				} 
+				else {
+					TypeReference<List<Complaint>> typeReference = new TypeReference<List<Complaint>>() {
+					};
+					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
+							typeReference);
+					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
+				}
+			}
+			
+			//For employee
+			if("EMPLOYEE".equals(roleName)) {
 				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
 						+ "org_id = ? AND opr_id = ? AND (created_by = ? OR assigned_to = ?)" ;
 				l_PreparedStatement = l_DBConnection.prepareStatement(
@@ -377,7 +404,7 @@ public class ComplaintService {
 							typeReference);
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
-			}						
+			}
 			return commonUtils.responseErrorHeader(null, null, HttpStatus.FORBIDDEN, "Unauthorized role or role not handled");
 		}
 		
@@ -395,7 +422,7 @@ public class ComplaintService {
 		}	
 	}
 
-
+	//get complaint by id
 	public ResponseEntity<Object> getComplaintById(CommonRequestModel request) {
 		
 		Connection l_DBConnection = null;

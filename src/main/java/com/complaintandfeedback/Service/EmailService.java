@@ -5,6 +5,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import com.complaintandfeedback.Model.Complaint;
+
 @Service
 public class EmailService {
 
@@ -27,6 +29,79 @@ public class EmailService {
         message.setText(mailBody);
         mailSender.send(message);
     }
+   
+        public void sendNotification(String to, String subject, String text) {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
+            mailSender.send(message);
+        }
 
-}
+        public void notifyComplaintCreation(String userEmail, String assignedEmail, String complaintDetails) {
+            String userSubject = "Complaint Created Successfully – Your Issue is Being Addressed!";
+            String userText = String.format(
+                "Dear User,\n\n" +
+                "We have successfully received your complaint. Our team is currently reviewing your issue, and we will update you as soon as possible.\n\n" +
+                "Here are the details of your complaint:\n\n" +
+                "%s\n\n" +
+                "We appreciate your patience.\n\n" +
+                "Best Regards,\n" +
+                "Support Team",
+                complaintDetails
+            );
+            sendNotification(userEmail, userSubject, userText);
+            String assignedSubject = "New Complaint Assigned – Action Required";
+            String assignedText = String.format(
+                "Dear [Assigned User/Department],\n\n" +
+                "A new complaint has been assigned to you for review and resolution. Please find the details below:\n\n" +
+                "Complaint Details:\n%s\n\n" +
+                "Kindly take prompt action on this complaint and keep the user informed of the status.\n\n" +
+                "Best Regards,\n" +
+                "Support Team",
+                complaintDetails
+            );
+            sendNotification(assignedEmail, assignedSubject, assignedText);
+        }
+
+        public void notifyComplaintUpdate(String userEmail, String assignedEmail, String fromStatus, String toStatus, String complaintDetails) {
+            String userSubject = "Complaint Status Updated – New Update on Your Issue";
+            String userText = String.format(
+                "Dear User,\n\n" +
+                "We are writing to inform you that the status of your complaint has been updated. Please find the details below:\n\n" +
+                "Complaint Details:\n%s\n\n" +
+                "Previous Status: %s\n" +
+                "Current Status: %s\n\n" +
+                "We are committed to resolving your complaint as soon as possible. Thank you for your understanding.\n\n" +
+                "Best Regards,\n" +
+                "Support Team",
+                complaintDetails, fromStatus, toStatus
+            );
+            sendNotification(userEmail, userSubject, userText);
+            String assignedSubject = "Complaint Status Updated – Action Needed";
+            String assignedText = String.format(
+                "Dear [Assigned User/Department],\n\n" +
+                "The status of the complaint assigned to you has been updated. Please see the details below:\n\n" +
+                "Complaint Details:\n%s\n\n" +
+                "Previous Status: %s\n" +
+                "Current Status: %s\n\n" +
+                "Please review and take necessary action as required.\n\n" +
+                "Best Regards,\n" +
+                "Support Team",
+                complaintDetails, fromStatus, toStatus
+            );
+            sendNotification(assignedEmail, assignedSubject, assignedText);
+        }
+        
+        public String buildComplaintDetails(Complaint complaint) {
+            return String.format(
+                "Complaint ID: %s\nTitle: %s\nType: %s\nPriority: %s\nDescription: %s\nCreated By: %s\nCreated On: %s",
+                complaint.getComplaint_id(),
+                complaint.getSubject(),
+                complaint.getPriority(),
+                complaint.getDescription()
+            );
+        }
+
+    }
 

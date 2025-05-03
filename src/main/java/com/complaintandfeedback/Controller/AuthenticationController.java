@@ -85,6 +85,10 @@ public class AuthenticationController {
    public ResponseEntity<Object> getUserByDepartment(@RequestBody CommonRequestModel commonRequestModel){
 	   return authenticationService.getUserByDepartment(commonRequestModel);
    }
-    
+//get user by id
+   @PostMapping("/{accountId}")
+   public ResponseEntity<Object> getUserByAccountId(@RequestBody CommonRequestModel commonRequestModel) {
+       return authenticationService.getUserByAccountId(commonRequestModel.getId());
+   }
     
 }

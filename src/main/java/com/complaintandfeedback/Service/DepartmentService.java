@@ -104,7 +104,7 @@ public class DepartmentService {
             	 return ResponseEntity.status(HttpStatus.CREATED).body(
             			 new ResponseMessage("Success", "Department Updated successfully", department.getDepartment_id()));
             } else {
-                return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save department");
+                return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update department");
             }
         } catch (Exception e) {
             return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);

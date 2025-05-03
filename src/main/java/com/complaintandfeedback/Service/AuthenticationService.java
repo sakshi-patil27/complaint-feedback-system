@@ -115,9 +115,11 @@ public class AuthenticationService {
 	
 	public ResponseEntity<?> login(String email, String password) {
 		String sql = "SELECT a.account_id,a.password,a.org_id,a.opr_id,a.role_id,a.name,org.org_name as l_org_name,roles_mst.role_name AS l_role_name "
-				+ "FROM account_user_mst a"
+				+ ", departments_mst.department_id as l_department_Id ,departments_mst.department_name as l_department_name"
+				+ " FROM account_user_mst a"
 				+ " LEFT JOIN org ON org.org_id=a.org_id"
 				+ " LEFT JOIN roles_mst ON roles_mst.role_id=a.role_id"
+				+ " LEFT JOIN departments_mst ON departments_mst.department_id=a.department_id"
 				+ " WHERE a.email = ? AND a.is_active = 'YES'";
 
 		try {
@@ -137,7 +139,8 @@ public class AuthenticationService {
 			                Long oprId = userMap.get("opr_id") != null ? ((Number) userMap.get("opr_id")).longValue() : null;
 				AuthenticationResponse response = new AuthenticationResponse(true, "Login successful", token,
 						(String) userMap.get("account_id"), (String) userMap.get("role_id"),
-						(String) userMap.get("name"),orgId,oprId,(String) userMap.get("l_org_name"),(String) userMap.get("l_role_name"));
+						(String) userMap.get("name"),orgId,oprId,(String) userMap.get("l_org_name"),
+						(String) userMap.get("l_role_name"),(String) userMap.get("l_department_Id"),(String) userMap.get("l_department_name"));
 
 				return new ResponseEntity<>(response, HttpStatus.OK);
 			} else {
@@ -254,5 +257,50 @@ public class AuthenticationService {
 		
 	}
 
+	  public ResponseEntity<Object> getUserByAccountId(String accountId) {
+	        Connection connection = null;
 
+	        try {
+	            connection = l_DataSource.getConnection();
+
+	            String query = "SELECT * FROM account_user_mst WHERE account_id = ?";
+	            PreparedStatement preparedStatement = connection.prepareStatement(query);
+	            preparedStatement.setString(1, accountId);
+
+	            ResultSet rs = preparedStatement.executeQuery();
+
+	            if (rs.next()) {
+	                AccountUser user = new AccountUser();
+	                user.setAccount_id(rs.getString("account_id"));
+	                user.setName(rs.getString("name"));
+	                user.setEmail(rs.getString("email"));
+	                user.setPhone_no(rs.getString("phone_no"));
+	                user.setPassword(rs.getString("password"));
+	                user.setDepartment_id(rs.getString("department_id"));
+	                user.setRole_id(rs.getString("role_id"));
+	                user.setOrg_id(rs.getLong("org_id"));
+	                user.setOpr_id(rs.getLong("opr_id"));
+	                user.setCreated_by(rs.getString("created_by"));
+	                user.setCreated_on(rs.getString("created_on"));
+	                user.setModified_by(rs.getString("modified_by"));
+	                user.setModified_on(rs.getString("modified_on"));
+	                user.setIs_active(rs.getString("is_active"));
+
+	                return ResponseEntity.status(HttpStatus.OK).body(user);
+	            } else {
+	                return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "User not found for account ID: " + accountId);
+	            }
+
+	        } catch (Exception e) {
+	            return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+	        } finally {
+	            if (connection != null) {
+	                try {
+	                    connection.close();
+	                } catch (Exception e) {
+	                    return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+	                }
+	            }
+	        }
+	    }
 }

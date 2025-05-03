@@ -23,31 +23,24 @@ public class ComplaintController {
 	@Autowired
 	private ComplaintService complaintService; 
 	
-	// Save new Complaint
     @PostMapping("/saveComplaint")
-    public ResponseEntity<Object> saveComplaint(@Valid @RequestBody ComplaintDto complaint) throws SQLException {
+    public ResponseEntity<Object> saveComplaint(@RequestBody ComplaintDto complaint) throws SQLException {
         return complaintService.saveComplaint(complaint);
     }
-    
-    // Update existing Complaint
     @PostMapping("/updateComplaint")
     public ResponseEntity<Object> updateComplaint(@Valid @RequestBody Complaint complaint) throws SQLException {
         return complaintService.updateComplaint(complaint);
     }
 	
-    //Update status of complaint
     @PostMapping("/updateStatus")
     public ResponseEntity<Object> updateStatus(@Valid @RequestBody Complaint complaint) throws SQLException {
     	return complaintService.updateStatus(complaint);
     }
-    
-    // Get all active Complaint
     @PostMapping("/getAllComplaint")
     public ResponseEntity<Object> getAllActiveComplaint(@RequestBody CommonRequestModel request) {
         return complaintService.getAllActiveComplaints(request);
     }    
     
-    // get Complaint By id
     @PostMapping("/getComplaintById")
     public ResponseEntity<Object> getComplaintById(@RequestBody CommonRequestModel request) {
         return complaintService.getComplaintById(request);

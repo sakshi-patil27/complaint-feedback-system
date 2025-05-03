@@ -18,5 +18,7 @@ public class AuthenticationResponse {
       private Long opr_id;
       private String l_org_name;
       private String l_role_name;
+      private String l_department_Id;
+      private String l_department_name;
 }
 

@@ -52,4 +52,8 @@ public class Complaint {
     private Timestamp due_date;
 
     private String is_active;
+    
+    private String l_previous_status;
+    
+    
 }

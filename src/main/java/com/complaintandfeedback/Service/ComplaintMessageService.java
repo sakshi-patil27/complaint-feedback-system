@@ -1,6 +1,5 @@
 package com.complaintandfeedback.Service;
 
-import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -18,7 +17,6 @@ import com.complaintandfeedback.Model.ComplaintMessageRequest;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 

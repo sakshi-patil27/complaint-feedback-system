@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.DTO.ComplaintDto;
+import com.complaintandfeedback.Model.AccountUser;
 import com.complaintandfeedback.Model.AttachmentTrn;
 import com.complaintandfeedback.Model.Complaint;
 import com.complaintandfeedback.Model.ComplaintStatusHistory;
@@ -43,6 +44,15 @@ public class ComplaintService {
 	
 	@Autowired
 	private AttachmentService attachmentService;
+	
+	@Autowired
+	private EmailService emailService;
+	
+	@Autowired
+	private AuthenticationService authenticationService;
+	
+	@Autowired
+    private ObjectMapper objectMapper;
 	
 	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	
@@ -126,6 +136,46 @@ public class ComplaintService {
 		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
 		        }
 	        	
+		        //send Mail to concerned parties
+		        
+		        //get email of person who created complaint
+		        response = authenticationService.getUserByAccountId(complaint.getCreated_by());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		        AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        // Get email of corresponding HOD when complaint is created
+		        l_Query = "SELECT a.email\n"
+		        		+ "FROM account_user_mst a\n"
+		        		+ "JOIN roles_mst r ON a.role_id = r.role_id\n"
+		        		+ "WHERE a.department_id = ? AND r.role_name = 'HOD';";
+		        
+		        l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
+		        
+		        l_PreparedStatement.setString(1, complaint.getDepartment_id());
+		        
+		        ResultSet l_ResultSet = l_PreparedStatement.executeQuery();
+		        
+		        String hodEmail = null;
+		        if(l_ResultSet.next()) {
+		        	hodEmail = l_ResultSet.getString("email");
+		        	if(hodEmail == null || hodEmail.isBlank()) {
+				    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email not Found");
+				    }
+		        }
+		        
+		        String complaintDetails =  emailService.buildComplaintDetails(complaint);
+		        
+		        response = emailService.notifyComplaintCreation(accountUser.getEmail(),hodEmail,complaintDetails);
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		        
 		        l_DBConnection.commit();
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
 	                    new ResponseMessage("Success", "Complaint saved successfully", complaintId)
@@ -182,7 +232,57 @@ public class ComplaintService {
         	
             int rowsAffected = l_PreparedStatement.executeUpdate();
                      
-            if (rowsAffected > 0) {		        
+            if (rowsAffected > 0) {
+            	
+            	//Also creating a record in the Complaint status history table
+		        
+            	if(!complaint.getStatus().equals(complaint.getL_previous_status())) {
+			        ComplaintStatusHistory complaintService = new ComplaintStatusHistory();
+			        
+			        complaintService.setComplaint_id(complaint.getComplaint_id());
+			        complaintService.setFrom_status(complaint.getL_previous_status());
+			        complaintService.setTo_status(complaint.getStatus());
+			        complaintService.setReason("");		        
+			        complaintService.setChanged_by(complaint.getCreated_by());		        
+			        
+			        ResponseEntity<Object> response =complaintStatusHistoryService.saveComplaintStatusHistory(complaintService,l_DBConnection);
+			        
+			        if(!response.getStatusCode().equals(HttpStatus.CREATED)) {
+			        	l_DBConnection.rollback();
+			        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+			        }
+            	}
+            	
+            	//send Mail to concerned parties
+		        
+		        //get email of person who created complaint
+		        ResponseEntity<Object> response = authenticationService.getUserByAccountId(complaint.getCreated_by());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		        AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        //get email of assigned to
+		        response = authenticationService.getUserByAccountId(complaint.getAssigned_to());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		        AccountUser assignedTo = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        String complaintDetails =  emailService.buildComplaintDetails(complaint);
+		        
+		        response = emailService.notifyComplaintUpdate(accountUser.getEmail(), assignedTo.getEmail()
+		        			, complaint.getL_previous_status(), complaint.getStatus(), complaintDetails);
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+            	
 		        l_DBConnection.commit(); 
 		        return ResponseEntity.status(HttpStatus.OK).body(
                          new ResponseMessage("Success", "Complaint Updated successfully", complaint.getComplaint_id())
@@ -258,11 +358,67 @@ public class ComplaintService {
 		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
 		        }
 		        
+		        //send Mail to concerned parties
+		        
+		        //get email of person who created complaint
+		        response = authenticationService.getUserByAccountId(complaint.getCreated_by());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		        AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        // Get email of corresponding HOD when complaint is created
+		        sql = "SELECT a.email\n"
+		        		+ "FROM account_user_mst a\n"
+		        		+ "JOIN roles_mst r ON a.role_id = r.role_id\n"
+		        		+ "WHERE a.department_id = ? AND r.role_name = 'HOD';";
+		        
+		        l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+		        
+		        l_PreparedStatement.setString(1, complaint.getDepartment_id());
+		        
+		        l_ResultSet = l_PreparedStatement.executeQuery();
+		        
+		        String hodEmail = null;
+		        if(l_ResultSet.next()) {
+		        	hodEmail = l_ResultSet.getString("email");
+		        	if(hodEmail == null || hodEmail.isBlank()) {
+				    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email not Found");
+				    }
+		        }
+		        
+		        //get email of assigned to
+		        response = authenticationService.getUserByAccountId(complaint.getAssigned_to());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		        AccountUser assignedTo = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        String complaintDetails =  emailService.buildComplaintDetails(complaint);
+		        
+		        // send mail to user and hod
+		        response = emailService.notifyComplaintUpdate(accountUser.getEmail(), hodEmail
+		        			, complaint.getL_previous_status(), complaint.getStatus(), complaintDetails);
+		        
+		        // send mail to assigned to
+		        ResponseEntity<Object> response1 = emailService.notifyComplaintUpdate("", assignedTo.getEmail()
+	        			, complaint.getL_previous_status(), complaint.getStatus(), complaintDetails);
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK) && !response1.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+            	
 		        l_DBConnection.commit(); 
 		        return ResponseEntity.status(HttpStatus.OK).body(
                          new ResponseMessage("Success", "Complaint Updated successfully", complaint.getComplaint_id())
                      );
-            } else {
+            } 
+            else {
             	l_DBConnection.rollback();
                 return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save department");
             }

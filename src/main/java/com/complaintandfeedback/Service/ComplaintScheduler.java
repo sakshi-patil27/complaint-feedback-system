@@ -80,7 +80,7 @@ public class ComplaintScheduler {
             Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
 
             for (Complaint complaint : complaints) {
-                if (complaint.getDue_date() != null && complaint.getDue_date().before(currentTimestamp)) {
+                if (complaint.getDue_date() != null && complaint.getDue_date().before(currentTimestamp) && !"ESCALATED".equals(complaint.getStatus())) {
                     // Due date has passed, so escalate the status
                     complaint.setStatus("ESCALATED");
 

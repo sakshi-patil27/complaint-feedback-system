@@ -86,7 +86,7 @@ public class AttachmentService {
 	            }
 	        }
 
-	        return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseMessages);
+	        return ResponseEntity.status(HttpStatus.CREATED).body(responseMessages);
 
 	    } catch (Exception e) {
 	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);

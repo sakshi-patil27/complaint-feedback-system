@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
+import com.complaintandfeedback.DTO.ComplaintDto;
 import com.complaintandfeedback.Model.Complaint;
 import com.complaintandfeedback.Service.ComplaintService;
 
@@ -24,7 +25,7 @@ public class ComplaintController {
 	
 	// Save new Complaint
     @PostMapping("/saveComplaint")
-    public ResponseEntity<Object> saveComplaint(@Valid @RequestBody Complaint complaint) throws SQLException {
+    public ResponseEntity<Object> saveComplaint(@Valid @RequestBody ComplaintDto complaint) throws SQLException {
         return complaintService.saveComplaint(complaint);
     }
     

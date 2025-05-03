@@ -19,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
+import com.complaintandfeedback.DTO.ComplaintDto;
+import com.complaintandfeedback.Model.AttachmentTrn;
 import com.complaintandfeedback.Model.Complaint;
 import com.complaintandfeedback.Model.ComplaintStatusHistory;
 import com.complaintandfeedback.Model.ResponseMessage;
@@ -39,16 +41,22 @@ public class ComplaintService {
 	@Autowired
 	private DataSource l_DataSource;
 	
+	@Autowired
+	private AttachmentService attachmentService;
+	
 	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	
 	// Save Complaint
-	public ResponseEntity<Object> saveComplaint(Complaint complaint) throws SQLException {
+	public ResponseEntity<Object> saveComplaint(ComplaintDto complaintDto) throws SQLException {
 	    
 	    Connection l_DBConnection = null;
 	    
 	    try {
 	        l_DBConnection = l_DataSource.getConnection();
 	        l_DBConnection.setAutoCommit(false);
+	        
+	        Complaint complaint = complaintDto.getComplaint();
+	        
 	        String complaintId = "COMP" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 	        complaint.setComplaint_id(complaintId);
 
@@ -84,6 +92,22 @@ public class ComplaintService {
 	        int rowsAffected = l_PreparedStatement.executeUpdate();
 	        
 	        if (rowsAffected > 0) {
+	        	
+	        	//Also check for the attachments for complaints
+	        	List<AttachmentTrn> attachments = complaintDto.getAttachments();
+	        	
+	        	if(!attachments.isEmpty()) {
+	        		
+	        		for(AttachmentTrn attachment:attachments) {
+	        			attachment.setEntity_id(complaintId);
+	        		}
+	        		
+	        		ResponseEntity<Object> response = attachmentService.saveAttachments(attachments);
+	        		if(!response.getStatusCode().equals(HttpStatus.CREATED)) {
+			        	l_DBConnection.rollback();
+			        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+			        }
+	        	}
 	        	
 	        	//Also creating a record in the Complaint status history table
 		        

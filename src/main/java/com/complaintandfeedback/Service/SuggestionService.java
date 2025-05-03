@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
+import com.complaintandfeedback.DTO.SuggestionDto;
+import com.complaintandfeedback.Model.AttachmentTrn;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.complaintandfeedback.Model.Suggestion;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -31,13 +33,18 @@ public class SuggestionService {
 	
 	@Autowired
 	private DataSource l_DataSource;
+	
+	@Autowired
+	private AttachmentService attachmentService;
 
-	public ResponseEntity<Object> saveSuggestion(Suggestion suggestion) {
+	public ResponseEntity<Object> saveSuggestion(SuggestionDto suggestionDto) {
 	    
 	    Connection l_DBConnection = null;
 
 	    try {
 	        l_DBConnection = l_DataSource.getConnection();
+	        
+	        Suggestion suggestion = new Suggestion();
 	        
 	        // Generate a unique suggestion ID
 	        String suggestionId = "SG" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
@@ -65,6 +72,23 @@ public class SuggestionService {
 	        int rowsAffected = l_PreparedStatement.executeUpdate();
 
 	        if (rowsAffected > 0) {
+	        	
+	        	//Also check for the attachments for complaints
+	        	List<AttachmentTrn> attachments = suggestionDto.getAttachments();
+	        	
+	        	if(!attachments.isEmpty()) {
+	        		
+	        		for(AttachmentTrn attachment:attachments) {
+	        			attachment.setEntity_id(suggestionId);
+	        		}
+	        		
+	        		ResponseEntity<Object> response = attachmentService.saveAttachments(attachments);
+	        		if(!response.getStatusCode().equals(HttpStatus.CREATED)) {
+			        	l_DBConnection.rollback();
+			        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+			        }
+	        	}
+	        	
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
 	                new ResponseMessage("Success", "Suggestion saved successfully", suggestionId)
 	            );

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
-import com.complaintandfeedback.Model.Suggestion;
+import com.complaintandfeedback.DTO.SuggestionDto;
 import com.complaintandfeedback.Service.SuggestionService;
 
 @RestController
@@ -19,8 +19,8 @@ public class SuggestionController {
 	private SuggestionService suggestionService;
 	
 	@PostMapping("/saveSuggestion")
-	public ResponseEntity<Object> saveFeedback(@RequestBody Suggestion suggestion){
-		return suggestionService.saveSuggestion(suggestion);
+	public ResponseEntity<Object> saveFeedback(@RequestBody SuggestionDto suggestionDto){
+		return suggestionService.saveSuggestion(suggestionDto);
 	}
 	
 	@PostMapping("/getAllSuggestion")

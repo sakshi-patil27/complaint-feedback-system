@@ -1,15 +1,19 @@
 package com.complaintandfeedback.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.Model.Complaint;
+import com.complaintandfeedback.Model.ResponseMessage;
 
 @Service
 public class EmailService {
-
+	@Autowired
+	private CommonUtils commonUtils;
     @Autowired
     private JavaMailSender mailSender;
 
@@ -38,7 +42,8 @@ public class EmailService {
             mailSender.send(message);
         }
 
-        public void notifyComplaintCreation(String userEmail, String assignedEmail, String complaintDetails) {
+        public ResponseEntity<Object> notifyComplaintCreation(String userEmail, String assignedEmail, String complaintDetails) {
+        	try {
             String userSubject = "Complaint Created Successfully – Your Issue is Being Addressed!";
             String userText = String.format(
                 "Dear User,\n\n" +
@@ -62,9 +67,15 @@ public class EmailService {
                 complaintDetails
             );
             sendNotification(assignedEmail, assignedSubject, assignedText);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseMessage("Success", "Email send successfully", null));
+       	} catch (Exception e) {
+            return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+        }
         }
 
-        public void notifyComplaintUpdate(String userEmail, String assignedEmail, String fromStatus, String toStatus, String complaintDetails) {
+        public ResponseEntity<Object> notifyComplaintUpdate(String userEmail, String assignedEmail, String fromStatus, String toStatus, String complaintDetails) {
+        	try {
             String userSubject = "Complaint Status Updated – New Update on Your Issue";
             String userText = String.format(
                 "Dear User,\n\n" +
@@ -91,11 +102,16 @@ public class EmailService {
                 complaintDetails, fromStatus, toStatus
             );
             sendNotification(assignedEmail, assignedSubject, assignedText);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseMessage("Success", "Email send successfully", null));
+       	} catch (Exception e) {
+            return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+        }
         }
         
         public String buildComplaintDetails(Complaint complaint) {
             return String.format(
-                "Complaint ID: %s\nTitle: %s\nType: %s\nPriority: %s\nDescription: %s\nCreated By: %s\nCreated On: %s",
+                "Complaint ID: %s\nTitle: %s\nType: %s\nPriority: %s\nDescription: %s",
                 complaint.getComplaint_id(),
                 complaint.getSubject(),
                 complaint.getPriority(),

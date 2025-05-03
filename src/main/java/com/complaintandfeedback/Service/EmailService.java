@@ -120,13 +120,20 @@ public class EmailService {
             String priority = complaint.getPriority() != null ? complaint.getPriority() : "N/A";
             String description = complaint.getDescription() != null ? complaint.getDescription() : "N/A";
             
-            return String.format(
-                "Complaint ID: %s\nTitle: %s\nType: %s\nPriority: %s\nDescription: %s",
-                complaintId,
-                subject,
-                priority,
-                description
-            );
+            try {
+                // Ensure that the format specifiers match the arguments passed
+                return String.format(
+                    "Complaint ID: %s\nTitle: %s\nPriority: %s\nDescription: %s",
+                    complaintId,
+                    subject,
+                    priority,
+                    description
+                );
+            } catch (Exception e) {
+                // Log the exception or handle it gracefully
+                return "Error formatting complaint details: " + e.getMessage();
+            }
         }
+
 
     }

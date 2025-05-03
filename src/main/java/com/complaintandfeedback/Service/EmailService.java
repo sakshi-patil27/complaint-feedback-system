@@ -108,32 +108,24 @@ public class EmailService {
             return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
         }
         }
-        
         public String buildComplaintDetails(Complaint complaint) {
             if (complaint == null) {
                 return "Complaint details not available.";
             }
-            
+
             // Provide default values if any of the complaint attributes are null
             String complaintId = complaint.getComplaint_id() != null ? complaint.getComplaint_id() : "N/A";
             String subject = complaint.getSubject() != null ? complaint.getSubject() : "N/A";
             String priority = complaint.getPriority() != null ? complaint.getPriority() : "N/A";
             String description = complaint.getDescription() != null ? complaint.getDescription() : "N/A";
             
-            try {
-                // Ensure that the format specifiers match the arguments passed
-                return String.format(
-                    "Complaint ID: %s\nTitle: %s\nPriority: %s\nDescription: %s",
-                    complaintId,
-                    subject,
-                    priority,
-                    description
-                );
-            } catch (Exception e) {
-                // Log the exception or handle it gracefully
-                return "Error formatting complaint details: " + e.getMessage();
-            }
+            // Use string concatenation
+            return "Complaint ID: " + complaintId + "\n" +
+                   "Title: " + subject + "\n" +
+                   "Priority: " + priority + "\n" +
+                   "Description: " + description;
         }
+
 
 
     }

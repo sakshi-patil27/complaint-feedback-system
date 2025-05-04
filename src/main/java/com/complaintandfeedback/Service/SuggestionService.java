@@ -135,6 +135,10 @@ public class SuggestionService {
 		        
 		        response = emailService.notifySuggestionCreation(accountUser.getEmail(), hodEmail, suggestionDetails);
 		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Failed to save suggestion");
+		        }
+		        
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
 	                new ResponseMessage("Success", "Suggestion saved successfully", suggestionId)
 	            );
@@ -156,15 +160,12 @@ public class SuggestionService {
 	    }
 	}
 	
-	//Update Suggestion
-	//public ResponseEntity<Object> ;
-	
 	//Get suggestion listing according to the role
 	public ResponseEntity<Object> getAllSuggestion(CommonRequestModel request) {
 
 	    Connection l_DBConnection = null;
 	    JSONArray l_ModuleArr = new JSONArray();
-
+	    
 	    try {
 	        // Get role of the user 
 	        l_DBConnection = l_DataSource.getConnection();

@@ -15,8 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
+import com.complaintandfeedback.Model.AccountUser;
+import com.complaintandfeedback.Model.Complaint;
 import com.complaintandfeedback.Model.Feedback;
 import com.complaintandfeedback.Model.ResponseMessage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class FeedbackService {
@@ -26,6 +29,18 @@ public class FeedbackService {
 	
 	@Autowired
 	private DataSource l_DataSource;
+	
+	@Autowired
+	private EmailService emailService;
+	
+	@Autowired
+	private AuthenticationService authenticationService;
+	
+	@Autowired
+	private ComplaintService complaintService;
+	
+	@Autowired
+    private ObjectMapper objectMapper;
 
 	public ResponseEntity<Object> saveFeedback(Feedback feedback) {
 		
@@ -61,6 +76,70 @@ public class FeedbackService {
 		    int rowsAffected = l_PreparedStatement.executeUpdate();
 
 		    if (rowsAffected > 0) {
+		    	
+		    	//get email of person who created complaint
+		        ResponseEntity<Object> response = authenticationService.getUserByAccountId(feedback.getCreated_by());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save feedback");
+		        }
+		        AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        // get complaint corresponding to the complaint 
+		        CommonRequestModel commonRequestModel = new CommonRequestModel();
+		        commonRequestModel.setOrgId(feedback.getOrg_id());
+		        commonRequestModel.setOprId(feedback.getOpr_id());
+		        commonRequestModel.setId(feedbackId);
+		        response = complaintService.getComplaintById(commonRequestModel);
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save feedback");
+		        }
+		        
+		        Complaint complaint = objectMapper.convertValue(response.getBody(),Complaint.class);
+		        
+		        // Get email of corresponding HOD when complaint is created
+		        String sql = "SELECT a.email\n"
+		        		+ "FROM account_user_mst a\n"
+		        		+ "JOIN roles_mst r ON a.role_id = r.role_id\n"
+		        		+ "WHERE a.department_id = ? AND r.role_name = 'HOD';";
+		        
+		        l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+		        
+		        l_PreparedStatement.setString(1, complaint.getDepartment_id());
+		        
+		        ResultSet l_ResultSet = l_PreparedStatement.executeQuery();
+		        
+		        String hodEmail = null;
+		        if(l_ResultSet.next()) {
+		        	hodEmail = l_ResultSet.getString("email");
+		        	if(hodEmail == null || hodEmail.isBlank()) {
+				    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email not Found");
+				    }
+		        }
+		        
+		        //get email of assigned to
+		        response = authenticationService.getUserByAccountId(complaint.getAssigned_to());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save feedback");
+		        }
+		        AccountUser assignedTo = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        String feedbackDetails = emailService.buildFeedbackDetails(feedback);
+		        
+		        // send mail to user , hod , assigned employeee
+		        
+		        response = emailService.notifyFeedbackCreation(accountUser.getEmail(), hodEmail, assignedTo.getEmail(), feedbackDetails);
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        }
+		    	
 		    	return ResponseEntity.status(HttpStatus.CREATED).body(
 	                    new ResponseMessage("Success", "Feedback saved successfully", feedbackId)
 	            );

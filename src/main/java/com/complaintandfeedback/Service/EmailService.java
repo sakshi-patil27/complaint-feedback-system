@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.Model.Complaint;
+import com.complaintandfeedback.Model.Feedback;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.complaintandfeedback.Model.Suggestion;
 
@@ -107,14 +108,53 @@ public class EmailService {
 			                    + "Kindly review the suggestion and take appropriate action as required. Please keep the user informed of the status.\n\n"
 			                    + "Best Regards,\n" + "Support Team", suggestionDetails);
 			sendNotification(HODEmail, assignedSubject, assignedText);
+			return ResponseEntity.status(HttpStatus.OK)
+					.body(new ResponseMessage("Success", "Email send successfully", null));
 		}
 		catch(Exception e) {
 			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 		}
 		
-		return null;
-		
 	}
+	
+	public ResponseEntity<Object> notifyFeedbackCreation(String userEmail, String HODEmail, String assignedEmail,
+			String feedbackDetails){
+		
+		try {
+			// Email to user
+			String userSubject = "Feedback is received – Thank you for your input";			
+			String userText = String.format("Dear User,\n\n"
+                    + "Thank you for your valuable feedback. We appreciate your input and will consider it carefully as we work towards improving our services.\n\n"
+                    + "Here are the details of your feedback:\n\n" + "%s\n\n" 
+                    + "We appreciate your contribution and look forward to hearing more from you.\n\n"
+                    + "Best Regards,\n" + "Support Team", feedbackDetails);
+			sendNotification(userEmail, userSubject, userText);
+			
+			// Email to HOD
+			String assignedSubject = "New Feedback Received – Action Required";
+			String assignedText = String.format("Dear HOD,\n\n"
+			                    + "A new feedback has been received and needs your review and consideration. Please find the details below:\n\n"
+			                    + "Feedback Details:\n%s\n\n"
+			                    + "Kindly review the feedback and take appropriate action as required. Please keep the user informed of the status.\n\n"
+			                    + "Best Regards,\n" + "Support Team", feedbackDetails);
+			sendNotification(HODEmail, assignedSubject, assignedText);
+			
+			// Email to assigned person
+			String assignedPersonSubject = "New Feedback Assigned – Action Required";
+			String assignedPersonText = String.format("Dear Assigned Person,\n\n"
+			                    + "A new feedback has been assigned to you for review and action. Please find the details below:\n\n"
+			                    + "Feedback Details:\n%s\n\n"
+			                    + "Kindly review the feedback and take necessary action. Please ensure the user is updated on the status.\n\n"
+			                    + "Best Regards,\n" + "Support Team", feedbackDetails);
+			sendNotification(assignedEmail, assignedPersonSubject, assignedPersonText);
+
+			return ResponseEntity.status(HttpStatus.OK)
+					.body(new ResponseMessage("Success", "Emails sent successfully", null));
+		}
+		catch(Exception e) {
+			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
+		}
+}
 
 	public String buildComplaintDetails(Complaint complaint) {
 		if (complaint == null) {
@@ -143,6 +183,23 @@ public class EmailService {
 		String description = suggestion.getDescription() != null ? suggestion.getDescription() : "N/A";
 		
 		return "Suggestion Id:" + suggestionId +"\n" + "Title: " + subject +"\n" + "Description: " + description;
+	}
+	
+	public String buildFeedbackDetails(Feedback feedback) {
+		
+	    if(feedback == null) {
+	        return "Feedback not found";
+	    }
+			
+	    String feedbackId = feedback.getFeedback_id() != null ? feedback.getFeedback_id() : "N/A";
+	    String subject = feedback.getSubject() != null ? feedback.getSubject() : "N/A";
+	    String description = feedback.getDescription() != null ? feedback.getDescription() : "N/A";
+	    String rating = String.valueOf(feedback.getRating() != 0 ? feedback.getRating() : "N/A");
+			
+	    return "Feedback Id: " + feedbackId + "\n" 
+	        + "Subject: " + subject + "\n" 
+	        + "Description: " + description + "\n"
+	        + "Rating: " + rating;
 	}
 	
 

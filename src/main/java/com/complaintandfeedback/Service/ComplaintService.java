@@ -90,11 +90,19 @@ public class ComplaintService {
 	        l_PreparedStatement.setString(11, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 	        l_PreparedStatement.setString(12, complaint.getModified_by());	   
 	        
+//	        if (complaint.getDue_date() != null) {
+//	            l_PreparedStatement.setString(13, complaint.getDue_date().toLocalDateTime().format(formatter));
+//	        } else {
+//	            String tomorrow = LocalDateTime.now().plusDays(1).format(formatter);
+//	            l_PreparedStatement.setString(13, tomorrow);
+//	        }
 	        if (complaint.getDue_date() != null) {
-	            l_PreparedStatement.setString(13, complaint.getDue_date().toLocalDateTime().format(formatter));
+	            // Use setTimestamp for accurate handling of Timestamp type
+	            l_PreparedStatement.setTimestamp(13, Timestamp.valueOf(complaint.getDue_date().toLocalDateTime()));
 	        } else {
-	            String tomorrow = LocalDateTime.now().plusDays(1).format(formatter);
-	            l_PreparedStatement.setString(13, tomorrow);
+	            // For null due_date, set tomorrow's date correctly
+	            LocalDateTime tomorrow = LocalDateTime.now().plusDays(1);
+	            l_PreparedStatement.setTimestamp(13, Timestamp.valueOf(tomorrow));
 	        }
 	        l_PreparedStatement.setString(14,complaint.getIs_active());
 	        l_PreparedStatement.setLong(15, complaint.getOpr_id());
@@ -224,7 +232,7 @@ public class ComplaintService {
             l_PreparedStatement.setString(6, complaint.getAssigned_to());
             l_PreparedStatement.setString(7, complaint.getModified_by());
             l_PreparedStatement.setString(8, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            l_PreparedStatement.setString(9, complaint.getDue_date().toLocalDateTime().format(formatter));
+            l_PreparedStatement.setTimestamp(9, complaint.getDue_date());
             l_PreparedStatement.setString(10, complaint.getIs_active());
             l_PreparedStatement.setLong(11, complaint.getOpr_id());
             l_PreparedStatement.setLong(12, complaint.getOrg_id());
@@ -265,12 +273,16 @@ public class ComplaintService {
 		        AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
 		        
 		        //get email of assigned to
-		        response = authenticationService.getUserByAccountId(complaint.getAssigned_to());
-		        
-		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
-		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
+		        if(complaint.getAssigned_to() != null && !complaint.getAssigned_to().isEmpty()) 
+		        {
+		        	response = authenticationService.getUserByAccountId(complaint.getAssigned_to());
+			        
+			        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+			        	l_DBConnection.rollback();
+			        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
+			        }
 		        }
+		        
 		        AccountUser assignedTo = objectMapper.convertValue(response.getBody(), AccountUser.class);
 		        
 		        String complaintDetails =  emailService.buildComplaintDetails(complaint);

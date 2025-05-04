@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.DTO.SuggestionDto;
+import com.complaintandfeedback.Model.AccountUser;
 import com.complaintandfeedback.Model.AttachmentTrn;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.complaintandfeedback.Model.Suggestion;
@@ -36,6 +37,16 @@ public class SuggestionService {
 	
 	@Autowired
 	private AttachmentService attachmentService;
+	
+	@Autowired
+	private AuthenticationService authenticationService;
+	
+	@Autowired
+    private ObjectMapper objectMapper;
+	
+	@Autowired
+	private EmailService emailService;
+	
 
 	public ResponseEntity<Object> saveSuggestion(SuggestionDto suggestionDto) {
 	    
@@ -89,6 +100,41 @@ public class SuggestionService {
 			        }
 	        	}
 	        	
+	        	// Send Email to concerned parties
+	        	
+	        	//get email of person who created complaint
+		        ResponseEntity<Object> response = authenticationService.getUserByAccountId(suggestion.getCreated_by());
+		        
+		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+		        	l_DBConnection.rollback();
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save Suggestion");
+		        }
+		        AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
+		        
+		        // Get email of corresponding HOD when complaint is created
+		        l_Query = "SELECT a.email\n"
+		        		+ "FROM account_user_mst a\n"
+		        		+ "JOIN roles_mst r ON a.role_id = r.role_id\n"
+		        		+ "WHERE a.department_id = ? AND r.role_name = 'HOD';";
+		        
+		        l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
+		        
+		        l_PreparedStatement.setString(1, suggestion.getDepartment_id());
+		        
+		        ResultSet l_ResultSet = l_PreparedStatement.executeQuery();
+		        
+		        String hodEmail = null;
+		        if(l_ResultSet.next()) {
+		        	hodEmail = l_ResultSet.getString("email");
+		        	if(hodEmail == null || hodEmail.isBlank()) {
+				    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email not Found");
+				    }
+		        }
+	        	
+		        String suggestionDetails = emailService.buildSuggestiondetails(suggestion);
+		        
+		        response = emailService.notifySuggestionCreation(accountUser.getEmail(), hodEmail, suggestionDetails);
+		        
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
 	                new ResponseMessage("Success", "Suggestion saved successfully", suggestionId)
 	            );
@@ -109,6 +155,9 @@ public class SuggestionService {
 	        }
 	    }
 	}
+	
+	//Update Suggestion
+	//public ResponseEntity<Object> ;
 	
 	//Get suggestion listing according to the role
 	public ResponseEntity<Object> getAllSuggestion(CommonRequestModel request) {

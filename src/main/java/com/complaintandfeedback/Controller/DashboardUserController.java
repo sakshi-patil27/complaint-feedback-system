@@ -5,25 +5,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
-import com.complaintandfeedback.Service.DashboardService;
+import com.complaintandfeedback.Service.DashboardUserService;
 @RestController
 @RequestMapping("/api/Dashboard")
-public class DashboardController {
+public class DashboardUserController {
 	@Autowired
-	private DashboardService dashboardService;
-	
-	@PostMapping("/admin/complaint-status-summary")
+	private DashboardUserService dashboardUserService;
+	@PostMapping("/user/complaint-status-summary")
 	public ResponseEntity<Object> getComplaintStatusSummary(@RequestBody CommonRequestModel request) {
-	    return dashboardService.getComplaintSummaryByStatusForAdmin(request);
+	    return dashboardUserService.getComplaintCountByUser(request);
 	}
-	
-	@PostMapping("/admin/by-department-status")
-    public ResponseEntity<Object> getComplaintSummaryByDepartmentAndStatus(@RequestBody CommonRequestModel request) {
-        return dashboardService.getComplaintSummaryByDepartment(request);
+	@PostMapping("/user/by-months")
+    public ResponseEntity<Object> getComplaintsByMonths(@RequestBody CommonRequestModel request) {
+        return dashboardUserService.getComplaintsByMonths(request);
     }
-
 }

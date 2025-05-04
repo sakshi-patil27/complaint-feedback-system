@@ -154,20 +154,12 @@ public class CommonUtils {
 	public String gFN_Uploaded_File_Path() {
 	    String baseDirectory = "C:" + File.separator + "Micropro_ComplaintReport";
 
-	    // Get today's date in yyyy-MM-dd format
-	    LocalDateTime now = LocalDateTime.now();
-	    String today = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-	    // Final path: C:\Micropro_ComplaintReport\yyyy-MM-dd
-	    String fullPath = baseDirectory + File.separator + today;
-
-	    // Create directories if they do not exist
-	    File directory = new File(fullPath);
+	    File directory = new File(baseDirectory);
 	    if (!directory.exists()) {
 	        directory.mkdirs();
 	    }
 
-	    return fullPath;
+	    return baseDirectory;
 	}
 
 

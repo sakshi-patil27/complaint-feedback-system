@@ -21,4 +21,6 @@ public class ComplaintMessageHistoryTrn {
 	    private String message;
 	    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	    private Timestamp sent_on;
+	    private String l_sender_id;
+	    private String l_receiver_id;
 	}

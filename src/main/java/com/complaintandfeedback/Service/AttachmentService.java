@@ -125,7 +125,7 @@ public class AttachmentService {
 				List<AttachmentTrn> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(), typeReference);
 				for (AttachmentTrn attachment : l_data_List) {
 					String encrypted = CommonUtils.gFN_Common_Download_Data(
-							attachment.getFile_path() + File.separator + attachment.getStored_file_name());
+							attachment.getFile_path() +  "/" + attachment.getStored_file_name());
 					attachment.setL_encrypted_file(encrypted);
 				}
 

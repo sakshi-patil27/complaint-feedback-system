@@ -78,7 +78,15 @@ public class ComplaintMessageHistoryService {
         try {
             l_DBConnection = l_DataSource.getConnection();
 
-            String l_Query = "SELECT * FROM complaint_message_history WHERE complaint_id = ? ORDER BY sent_on ASC";
+            String l_Query = "SELECT c.complaint_message_history_id, c.complaint_id, c.sender_id, c.receiver_id, " +
+                    "c.message, c.sent_on, " +
+                    "sender.name AS l_sender_id, receiver.name AS l_receiver_id " +
+                    "FROM complaint_message_history c " +
+                    "LEFT JOIN account_user_mst sender ON sender.account_id = c.sender_id " +
+                    "LEFT JOIN account_user_mst receiver ON receiver.account_id = c.receiver_id " +
+                    "WHERE c.complaint_id = ? " +
+                    "ORDER BY c.sent_on ASC";
+
             PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
             l_PreparedStatement.setString(1, complaintId);
 

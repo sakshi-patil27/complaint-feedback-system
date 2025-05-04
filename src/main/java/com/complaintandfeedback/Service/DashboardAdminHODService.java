@@ -230,6 +230,92 @@ public class DashboardAdminHODService {
 	    }
 	}
 
+
+	/**
+	 * Get complaint count grouped by priority (Low, Medium, High).
+	 */
+	public ResponseEntity<Object> getComplaintsByPriority(CommonRequestModel request) {
+	    try (Connection connection = l_DataSource.getConnection()) {
+
+	        StringBuilder query = new StringBuilder(
+	            "SELECT priority, COUNT(*) AS count " +
+	            "FROM complaint_trn " +
+	            "WHERE is_active = 'YES' AND opr_id = ? AND org_id = ? "
+	        );
+	        if (request.getId() != null) {
+	            query.append("AND department_id = ? ");
+	        }
+	        query.append("GROUP BY priority");
+
+	        try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+	            stmt.setLong(1, request.getOprId());
+	            stmt.setLong(2, request.getOrgId());
+	            if (request.getId() != null) {
+	                stmt.setString(3, request.getId());
+	            }
+
+	            List<Map<String, Object>> priorityList = new ArrayList<>();
+	            try (ResultSet rs = stmt.executeQuery()) {
+	                while (rs.next()) {
+	                    Map<String, Object> map = new HashMap<>();
+	                    map.put("priority", rs.getString("priority"));
+	                    map.put("count", rs.getInt("count"));
+	                    priorityList.add(map);
+	                }
+	            }
+
+	            return ResponseEntity.ok(priorityList);
+	        }
+	    } catch (Exception e) {
+	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, "Error while fetching complaints by priority.");
+	    }
+	}
+
+	/**
+	 * Get top 5 pending complaints nearing their due date (within next 3 days).
+	 */
+	public ResponseEntity<Object> getPendingComplaintsNearingDueDate(CommonRequestModel request) {
+	    try (Connection connection = l_DataSource.getConnection()) {
+
+	        StringBuilder query = new StringBuilder(
+	            "SELECT complaint_id, subject, due_date, department_id, priority " +
+	            "FROM complaint_trn " +
+	            "WHERE is_active = 'YES' AND status = 'IN_PROGRESS' " +
+	            "AND due_date BETWEEN CURRENT_DATE() AND DATE_ADD(CURRENT_DATE(), INTERVAL 3 DAY) " +
+	            "AND opr_id = ? AND org_id = ? "
+	        );
+	        if (request.getId() != null) {
+	            query.append("AND department_id = ? ");
+	        }
+	        query.append("ORDER BY due_date ASC LIMIT 5"); // 🔁 Added ordering and limit
+
+	        try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+	            stmt.setLong(1, request.getOprId());
+	            stmt.setLong(2, request.getOrgId());
+	            if (request.getId() != null) {
+	                stmt.setString(3, request.getId());
+	            }
+
+	            List<Map<String, Object>> complaintsList = new ArrayList<>();
+	            try (ResultSet rs = stmt.executeQuery()) {
+	                while (rs.next()) {
+	                    Map<String, Object> map = new HashMap<>();
+	                    map.put("complaintId", rs.getString("complaint_id"));
+	                    map.put("subject", rs.getString("subject"));
+	                    map.put("dueDate", rs.getDate("due_date"));
+	                    map.put("departmentId", rs.getString("department_id"));
+	                    map.put("priority", rs.getString("priority"));
+	                    complaintsList.add(map);
+	                }
+	            }
+
+	            return ResponseEntity.ok(complaintsList);
+	        }
+	    } catch (Exception e) {
+	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, "Error while fetching nearing due date complaints.");
+	    }
+	}
+
 	}
 
 

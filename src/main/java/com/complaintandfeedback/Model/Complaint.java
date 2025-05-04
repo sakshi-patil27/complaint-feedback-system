@@ -55,5 +55,10 @@ public class Complaint {
     
     private String l_previous_status;
     
+    private String l_department_name;
+    
+    private String l_created_by;
+    
+    private String l_assigned_to;
     
 }

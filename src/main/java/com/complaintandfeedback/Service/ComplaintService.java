@@ -503,8 +503,16 @@ public class ComplaintService {
 						
 			//For HOD user
 			if("HOD".equals(roleName)) {
-				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
-						+ "org_id = ? AND opr_id = ? AND department_id = ?";  
+				l_Query = "SELECT c.*, "
+	                    + "d.department_name AS l_department_name, "
+	                    + "cb.name AS l_created_by, "
+	                    + "at.name AS l_assigned_to "
+	                    + "FROM complaint_trn c "
+	                    + "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
+	                    + "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
+	                    + "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+	                    + "WHERE c.is_active = 'YES' "
+	                    + "AND c.org_id = ? AND c.opr_id = ? AND c.department_id = ?";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
@@ -531,8 +539,16 @@ public class ComplaintService {
 						
 			//For Client			
 			if("CLIENT".equals(roleName)) {
-				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
-						+ "org_id = ? AND opr_id = ? AND created_by = ?" ;
+				l_Query = "SELECT c.*, "
+	                    + "d.department_name AS l_department_name, "
+	                    + "cb.name AS l_created_by, "
+	                    + "at.name AS l_assigned_to "
+	                    + "FROM complaint_trn c "
+	                    + "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
+	                    + "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
+	                    + "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+	                    + "WHERE c.is_active = 'YES' "
+	                    + "AND c.org_id = ? AND c.opr_id = ? AND c.created_by = ?";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
@@ -559,8 +575,17 @@ public class ComplaintService {
 			
 			//For employee
 			if("EMPLOYEE".equals(roleName)) {
-				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
-						+ "org_id = ? AND opr_id = ? AND (created_by = ? OR assigned_to = ?)" ;
+				l_Query = "SELECT c.*, "
+	                    + "d.department_name AS l_department_name, "
+	                    + "cb.name AS l_created_by, "
+	                    + "at.name AS l_assigned_to "
+	                    + "FROM complaint_trn c "
+	                    + "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
+	                    + "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
+	                    + "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+	                    + "WHERE c.is_active = 'YES' "
+	                    + "AND c.org_id = ? AND c.opr_id = ? "
+	                    + "AND (c.created_by = ? OR c.assigned_to = ?)";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
@@ -611,8 +636,16 @@ public class ComplaintService {
 		try {
 			l_DBConnection = l_DataSource.getConnection();
 			
-			String sql = "SELECT * from complaint_trn WHERE complaint_id = ? AND opr_id = ? AND org_id = ? "
-					+ "AND is_active = 'YES'";
+			String sql = "SELECT c.*, "
+                    + "d.department_name AS l_department_name, "
+                    + "cb.name AS l_created_by, "
+                    + "at.name AS l_assigned_to "
+                    + "FROM complaint_trn c "
+                    + "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
+                    + "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
+                    + "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+                    + "WHERE c.complaint_id = ? AND c.opr_id = ? AND c.org_id = ? "
+                    + "AND c.is_active = 'YES'";
 			
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(
 					sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -642,6 +675,9 @@ public class ComplaintService {
 			    // Mapping Timestamp fields
 			    complaint.setCreated_on(l_ResultSet.getTimestamp("created_on"));
 			    complaint.setModified_on(l_ResultSet.getTimestamp("modified_on"));
+			    complaint.setL_department_name(l_ResultSet.getString("l_department_name"));
+			    complaint.setL_created_by(l_ResultSet.getString("l_created_by"));
+			    complaint.setL_assigned_to(l_ResultSet.getString("l_assigned_to"));
 			    
 			    // Due date may be null, so check before mapping
 			    Timestamp dueDate = l_ResultSet.getTimestamp("due_date");

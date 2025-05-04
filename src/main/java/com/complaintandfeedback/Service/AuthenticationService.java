@@ -211,7 +211,8 @@ public class AuthenticationService {
 
         return false; 
     }
-
+    
+    // get user by Department
 	public ResponseEntity<Object> getUserByDepartment(CommonRequestModel request) {
 		
 		Connection l_DBConnection = null;

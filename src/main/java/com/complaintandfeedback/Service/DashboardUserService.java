@@ -145,5 +145,80 @@ public class DashboardUserService {
 	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
 	    }
 	}
+	public ResponseEntity<Object> getComplaintCountByAssignee(CommonRequestModel request) {
+	    try (Connection l_DBConnection = l_DataSource.getConnection()) {
+
+	        String statusCountQuery = "SELECT status, COUNT(*) AS complaint_count " +
+	                                  "FROM complaint_trn " +
+	                                  "WHERE is_active = 'YES' " +
+	                                  "AND assigned_to = ? " +  // <-- Changed
+	                                  "AND opr_id = ? " +
+	                                  "AND org_id = ? " +
+	                                  "GROUP BY status";
+
+	        String resolutionTimeQuery = 
+	            "SELECT AVG(resolution_time_hours) AS avg_resolution_time_hours FROM (" +
+	            "  SELECT csh.complaint_id, TIMESTAMPDIFF(HOUR, " +
+	            "    MIN(CASE WHEN csh.to_status = 'OPEN' THEN csh.changed_on END), " +
+	            "    MAX(CASE WHEN csh.to_status = 'CLOSED' THEN csh.changed_on END)) AS resolution_time_hours " +
+	            "  FROM complaint_status_history csh " +
+	            "  JOIN complaint_trn ct ON csh.complaint_id = ct.complaint_id " +
+	            "  WHERE ct.status = 'CLOSED' AND ct.is_active = 'YES' " +
+	            "   AND ct.assigned_to = ? " +  // <-- Changed
+	            "   AND ct.opr_id = ? AND ct.org_id = ? " +
+	            "  GROUP BY csh.complaint_id" +
+	            ") AS resolution_data WHERE resolution_time_hours IS NOT NULL";
+
+
+	        Map<String, Object> response = new HashMap<>();
+	        int total = 0;
+	        Map<String, Integer> statusCounts = new HashMap<>();
+
+	        // Status count
+	        try (PreparedStatement stmt = l_DBConnection.prepareStatement(statusCountQuery)) {
+	            stmt.setString(1, request.getId());
+	            stmt.setLong(2, request.getOprId());
+	            stmt.setLong(3, request.getOrgId());
+
+	            try (ResultSet rs = stmt.executeQuery()) {
+	                while (rs.next()) {
+	                    String status = rs.getString("status");
+	                    int count = rs.getInt("complaint_count");
+	                    statusCounts.put(status, count);
+	                    total += count;
+	                }
+	            }
+	        }
+
+	        // Avg resolution time
+	        Long avgResolutionHours = null;
+	        try (PreparedStatement stmt = l_DBConnection.prepareStatement(resolutionTimeQuery)) {
+	            stmt.setString(1, request.getId());
+	            stmt.setLong(2, request.getOprId());
+	            stmt.setLong(3, request.getOrgId());
+
+	            try (ResultSet rs = stmt.executeQuery()) {
+	                if (rs.next()) {
+	                    avgResolutionHours = rs.getLong("avg_resolution_time_hours");
+	                    if (rs.wasNull()) {
+	                        avgResolutionHours = null;
+	                    }
+	                }
+	            }
+	        }
+
+	        response.put("totalComplaintCount", total);
+	        response.put("statusWiseCount", statusCounts);
+	        response.put("avgResolutionTimeInHours", avgResolutionHours);
+
+	        return ResponseEntity.ok(response);
+
+	    } catch (SQLException e) {
+	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, "Database error occurred.");
+	    } catch (Exception e) {
+	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred.");
+	    }
+	}
+
 
 }

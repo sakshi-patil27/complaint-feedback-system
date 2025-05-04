@@ -12,7 +12,7 @@ import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.Service.DashboardAdminHODService;
 @RestController
 @RequestMapping("/api/Dashboard")
-public class DashboardAdminController {
+public class DashboardAdminHODController {
 	@Autowired
 	private DashboardAdminHODService dashboardService;
 	
@@ -30,4 +30,14 @@ public class DashboardAdminController {
     public ResponseEntity<Object> getComplaintsByMonths(@RequestBody CommonRequestModel request) {
         return dashboardService.getComplaintsByMonths(request);
     }
+	@PostMapping("/admin/by-priority")
+    public ResponseEntity<Object> getComplaintsByPriority(@RequestBody CommonRequestModel request) {
+        return dashboardService.getComplaintsByPriority(request);
+    }
+
+	@PostMapping("/admin/pending-complaints-nearing-due")
+	public ResponseEntity<Object> getPendingComplaintsNearingDueDate(@RequestBody CommonRequestModel request) {
+	    return dashboardService.getPendingComplaintsNearingDueDate(request);
+	}
+
 }

@@ -22,4 +22,8 @@ public class DashboardUserController {
     public ResponseEntity<Object> getComplaintsByMonths(@RequestBody CommonRequestModel request) {
         return dashboardUserService.getComplaintsByMonths(request);
     }
+	@PostMapping("/user/assign/complaint-status-summary")
+	public ResponseEntity<Object> getComplaintStatusSummaryByAssign(@RequestBody CommonRequestModel request) {
+	    return dashboardUserService.getComplaintCountByAssignee(request);
+	}
 }

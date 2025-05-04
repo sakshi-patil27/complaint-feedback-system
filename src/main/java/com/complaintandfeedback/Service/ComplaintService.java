@@ -249,7 +249,7 @@ public class ComplaintService {
 			        
 			        if(!response.getStatusCode().equals(HttpStatus.CREATED)) {
 			        	l_DBConnection.rollback();
-			        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+			        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
 			        }
             	}
             	
@@ -260,7 +260,7 @@ public class ComplaintService {
 		        
 		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
 		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
 		        }
 		        AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
 		        
@@ -269,7 +269,7 @@ public class ComplaintService {
 		        
 		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
 		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
 		        }
 		        AccountUser assignedTo = objectMapper.convertValue(response.getBody(), AccountUser.class);
 		        

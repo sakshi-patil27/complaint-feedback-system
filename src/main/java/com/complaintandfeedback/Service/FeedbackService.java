@@ -133,12 +133,12 @@ public class FeedbackService {
 		        
 		        // send mail to user , hod , assigned employeee
 		        
-		        response = emailService.notifyFeedbackCreation(accountUser.getEmail(), hodEmail, assignedTo.getEmail(), feedbackDetails);
+		        emailService.notifyFeedbackCreation(accountUser.getEmail(), hodEmail, assignedTo.getEmail(), feedbackDetails);
 		        
-		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
-		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
-		        }
+//		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+//		        	l_DBConnection.rollback();
+//		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+//		        }
 		    	
 		    	return ResponseEntity.status(HttpStatus.CREATED).body(
 	                    new ResponseMessage("Success", "Feedback saved successfully", feedbackId)

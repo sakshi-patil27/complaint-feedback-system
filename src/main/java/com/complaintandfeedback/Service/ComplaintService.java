@@ -169,12 +169,12 @@ public class ComplaintService {
 		        
 		        String complaintDetails =  emailService.buildComplaintDetails(complaint);
 		        
-		        response = emailService.notifyComplaintCreation(accountUser.getEmail(),hodEmail,complaintDetails);
+		        emailService.notifyComplaintCreation(accountUser.getEmail(),hodEmail,complaintDetails);
 		        
-		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
-		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
-		        }
+//		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+//		        	l_DBConnection.rollback();
+//		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+//		        }
 		        
 		        l_DBConnection.commit();
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -278,10 +278,10 @@ public class ComplaintService {
 		        response = emailService.notifyComplaintUpdate(accountUser.getEmail(), assignedTo.getEmail()
 		        			, complaint.getL_previous_status(), complaint.getStatus(), complaintDetails);
 		        
-		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
-		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
-		        }
+//		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+//		        	l_DBConnection.rollback();
+//		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
+//		        }
             	
 		        l_DBConnection.commit(); 
 		        return ResponseEntity.status(HttpStatus.OK).body(
@@ -401,17 +401,17 @@ public class ComplaintService {
 		        String complaintDetails =  emailService.buildComplaintDetails(complaint);
 		        
 		        // send mail to user and hod
-		        response = emailService.notifyComplaintUpdate(accountUser.getEmail(), hodEmail
+		        emailService.notifyComplaintUpdate(accountUser.getEmail(), hodEmail
 		        			, complaint.getL_previous_status(), complaint.getStatus(), complaintDetails);
 		        
 		        // send mail to assigned to
-		        ResponseEntity<Object> response1 = emailService.notifyComplaintUpdate("", assignedTo.getEmail()
+		        emailService.notifyComplaintUpdate("", assignedTo.getEmail()
 	        			, complaint.getL_previous_status(), complaint.getStatus(), complaintDetails);
 		        
-		        if(!response.getStatusCode().equals(HttpStatus.OK) && !response1.getStatusCode().equals(HttpStatus.OK)) {
-		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
-		        }
+//		        if(!response.getStatusCode().equals(HttpStatus.OK) && !response1.getStatusCode().equals(HttpStatus.OK)) {
+//		        	l_DBConnection.rollback();
+//		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
+//		        }
             	
 		        l_DBConnection.commit(); 
 		        return ResponseEntity.status(HttpStatus.OK).body(

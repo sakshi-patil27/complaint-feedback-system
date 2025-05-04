@@ -133,11 +133,11 @@ public class SuggestionService {
 	        	
 		        String suggestionDetails = emailService.buildSuggestiondetails(suggestion);
 		        
-		        response = emailService.notifySuggestionCreation(accountUser.getEmail(), hodEmail, suggestionDetails);
+		        emailService.notifySuggestionCreation(accountUser.getEmail(), hodEmail, suggestionDetails);
 		        
-		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Failed to save suggestion");
-		        }
+//		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+//		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Failed to save suggestion");
+//		        }
 		        
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
 	                new ResponseMessage("Success", "Suggestion saved successfully", suggestionId)

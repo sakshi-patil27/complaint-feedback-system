@@ -250,7 +250,7 @@ public class ComplaintService {
 			        complaintService.setComplaint_id(complaint.getComplaint_id());
 			        complaintService.setFrom_status(complaint.getL_previous_status());
 			        complaintService.setTo_status(complaint.getStatus());
-			        complaintService.setReason("");		        
+			        complaintService.setReason(complaint.getL_deffered_reason());		        
 			        complaintService.setChanged_by(complaint.getCreated_by());		        
 			        
 			        ResponseEntity<Object> response =complaintStatusHistoryService.saveComplaintStatusHistory(complaintService,l_DBConnection);

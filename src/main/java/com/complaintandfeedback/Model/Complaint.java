@@ -61,4 +61,5 @@ public class Complaint {
     
     private String l_assigned_to;
     
+    private String l_deffered_reason;
 }

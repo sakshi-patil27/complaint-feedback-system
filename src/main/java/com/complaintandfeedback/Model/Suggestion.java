@@ -32,8 +32,6 @@ public class Suggestion {
 	    private String modified_by; 
 	    private String attachment_id;  
 	    private Long opr_id;
-	    private String l_department_name;
-	    
-	    private String l_created_by;
-	    
+	    private String l_department_name;	    	
+	    private String l_created_by;	    
 }

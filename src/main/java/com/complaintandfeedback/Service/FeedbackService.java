@@ -171,8 +171,12 @@ public class FeedbackService {
 		try {
 			l_DBConnection = l_DataSource.getConnection();
 			
-			String sql = "SELECT * from feedback_trn WHERE complaint_id = ? AND opr_id = ? AND org_id = ? "
-					+ "AND is_active = 'YES'";
+			String sql = "SELECT f.*, "
+                    + "cb.name AS l_created_by "
+                    + "FROM feedback_trn f "
+                    + "LEFT JOIN account_user_mst cb ON f.created_by = cb.account_id "
+                    + "WHERE f.complaint_id = ? AND f.opr_id = ? AND f.org_id = ? "
+                    + "AND f.is_active = 'YES'";
 			
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(
 					sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -206,6 +210,7 @@ public class FeedbackService {
 			    // Mapping org_id and opr_id
 			    feedback.setOrg_id(l_ResultSet.getLong("org_id"));
 			    feedback.setOpr_id(l_ResultSet.getLong("opr_id"));
+			    feedback.setL_created_by(l_ResultSet.getString("l_created_by"));
 			}
 						
 			if (feedback == null) {

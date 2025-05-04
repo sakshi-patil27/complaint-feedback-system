@@ -36,4 +36,5 @@ public class Feedback {
     private Long org_id;
     private Long opr_id;
     private String is_active;
+    private String l_created_by;
 }

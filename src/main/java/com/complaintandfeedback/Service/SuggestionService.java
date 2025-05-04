@@ -200,7 +200,13 @@ public class SuggestionService {
 
 	        // For Admin role, all the suggestions are visible
 	        if("ADMIN".equals(roleName)) {
-	            l_Query = "SELECT * FROM suggestion_trn WHERE org_id = ? AND opr_id = ?";
+	        	l_Query = "SELECT s.*, "
+	                    + "d.department_name AS l_department_name, "
+	                    + "cb.name AS l_created_by "
+	                    + "FROM suggestion_trn s "
+	                    + "LEFT JOIN departments_mst d ON s.department_id = d.department_id "
+	                    + "LEFT JOIN account_user_mst cb ON s.created_by = cb.account_id "
+	                    + "WHERE s.org_id = ? AND s.opr_id = ?";
 	            l_PreparedStatement = l_DBConnection.prepareStatement(
 	                    l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -224,7 +230,13 @@ public class SuggestionService {
 
 	        // For HOD and Employee
 	        if("HOD".equals(roleName) || "EMPLOYEE".equals(roleName)) {
-	            l_Query = "SELECT * FROM suggestion_trn AND org_id = ? AND opr_id = ? AND department_id = ?";
+	        	l_Query = "SELECT s.*, "
+	                    + "d.department_name AS l_department_name, "
+	                    + "cb.name AS l_created_by "
+	                    + "FROM suggestion_trn s "
+	                    + "LEFT JOIN departments_mst d ON s.department_id = d.department_id "
+	                    + "LEFT JOIN account_user_mst cb ON s.created_by = cb.account_id "
+	                    + "WHERE s.org_id = ? AND s.opr_id = ? AND s.department_id = ?";
 	            l_PreparedStatement = l_DBConnection.prepareStatement(
 	                    l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -249,7 +261,13 @@ public class SuggestionService {
 
 	        // For Client role
 	        if("CLIENT".equals(roleName)) {
-	            l_Query = "SELECT * FROM suggestion_trn WHERE AND org_id = ? AND opr_id = ? AND created_by = ?";
+	        	l_Query = "SELECT s.*, "
+	                    + "d.department_name AS l_department_name, "
+	                    + "cb.name AS l_created_by "
+	                    + "FROM suggestion_trn s "
+	                    + "LEFT JOIN departments_mst d ON s.department_id = d.department_id "
+	                    + "LEFT JOIN account_user_mst cb ON s.created_by = cb.account_id "
+	                    + "WHERE s.org_id = ? AND s.opr_id = ? AND s.created_by = ?";
 	            l_PreparedStatement = l_DBConnection.prepareStatement(
 	                    l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -296,7 +314,13 @@ public class SuggestionService {
 	        l_DBConnection = l_DataSource.getConnection();
 
 	        // SQL query to fetch suggestion details by suggestion_id, opr_id, org_id, and is_active = 'YES'
-	        String sql = "SELECT * FROM suggestion_trn WHERE suggestion_id = ? AND opr_id = ? AND org_id = ? ";
+	        String sql = "SELECT s.*, "
+                    + "d.department_name AS l_department_name, "
+                    + "cb.name AS l_created_by "
+                    + "FROM suggestion_trn s "
+                    + "LEFT JOIN departments_mst d ON s.department_id = d.department_id "
+                    + "LEFT JOIN account_user_mst cb ON s.created_by = cb.account_id "
+                    + "WHERE s.suggestion_id = ? AND s.opr_id = ? AND s.org_id = ?";
 
 	        PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(
 	                sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -324,6 +348,8 @@ public class SuggestionService {
 	            suggestion.setModified_by(l_ResultSet.getString("modified_by"));
 	            suggestion.setAttachment_id(l_ResultSet.getString("attachment_id"));
 	            suggestion.setOpr_id(l_ResultSet.getLong("opr_id"));
+	            suggestion.setL_department_name(l_ResultSet.getString("l_department_name"));
+	            suggestion.setL_created_by(l_ResultSet.getString("l_created_by"));
 	        }
 
 	        // If no suggestion is found, return NOT_FOUND response

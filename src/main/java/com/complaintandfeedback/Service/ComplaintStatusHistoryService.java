@@ -40,7 +40,7 @@ public class ComplaintStatusHistoryService {
 	        	    + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 	        PreparedStatement pstmt = l_DBConnection.prepareStatement(insertQuery);
-	        String reason = "Deferred".equalsIgnoreCase(complaintStatusHistory.getTo_status()) 
+	        String reason = "DEFERRED".equals(complaintStatusHistory.getTo_status()) 
 	        	    ? complaintStatusHistory.getReason() 
 	        	    : "";
 

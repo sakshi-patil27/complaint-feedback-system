@@ -19,7 +19,7 @@ public class Feedback {
     @Size(max = 16)
     private String feedback_id;
     @NotBlank(message = "Subject is required")
-    @Size(max = 30, message = "Subject must be at most 30 characters")
+    @Size(max = 200, message = "Subject must be at most 200 characters")
     private String subject;
     @Size(max = 500, message = "Description can be up to 500 characters")
     private String description;

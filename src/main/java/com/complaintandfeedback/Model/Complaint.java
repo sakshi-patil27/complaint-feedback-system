@@ -23,11 +23,11 @@ public class Complaint {
     private Long opr_id;
     
     @NotBlank(message = "Subject field cannot be empty")	
-    @Size(max = 100, min = 1, message = "Subject field should be between 1 to 100 characters")
+    @Size(max = 200, min = 1, message = "Subject field should be between 1 to 200 characters")
     private String subject;
     
     @NotBlank(message = "Subject field cannot be empty")	
-    @Size(max = 200, min = 1, message = "Subject field should be between 1 to 200 characters")
+    @Size(max = 500, min = 1, message = "Subject field should be between 1 to 500 characters")
     @Column(columnDefinition = "TEXT")
     private String description;
 

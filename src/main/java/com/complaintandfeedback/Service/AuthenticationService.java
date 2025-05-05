@@ -81,17 +81,17 @@ public class AuthenticationService {
 	        }
 
 	        // 2. Get role_id for HOD using TRIM + LOWER
-	        String roleIdQuery = "SELECT role_id FROM roles_mst WHERE TRIM(LOWER(role_name)) = TRIM(LOWER(?)) AND org_id = ? AND opr_id = ?";
+	        String roleIdQuery = "SELECT role_id FROM roles_mst WHERE TRIM(LOWER(role_name)) = LOWER(?) AND org_id = ? AND opr_id = ?";
 	        List<String> roleIds = jdbcTemplate.query(
 	            roleIdQuery,
 	            new Object[]{"HOD", accountUser.getOrg_id(), accountUser.getOpr_id()},
 	            (rs, rowNum) -> rs.getString("role_id")
 	        );
 
-	        if (roleIds == null || roleIds.isEmpty()) {
-	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
-	                    "Role 'HOD' not found for this organization and operator");
-	        }
+//	        if (roleIds == null || roleIds.isEmpty()) {
+//	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
+//	                    "Role 'HOD' not found for this organization and operator");
+//	        }
 
 	        String deptHeadRoleId = roleIds.get(0); // Safe now
 
@@ -264,8 +264,8 @@ public class AuthenticationService {
 			        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		
 			// Use parameter binding to avoid SQL injection
-			l_PreparedStatement.setLong(1, request.getOrgId());
-			l_PreparedStatement.setLong(2, request.getOprId());
+			l_PreparedStatement.setLong(1, request.getOrg_id());
+			l_PreparedStatement.setLong(2, request.getOpr_id());
 			l_PreparedStatement.setString(3, request.getId());
 			
 			ResultSet l_ResultSet = l_PreparedStatement.executeQuery();

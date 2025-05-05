@@ -503,8 +503,8 @@ public class ComplaintService {
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
 				// Use parameter binding to avoid SQL injection
-				l_PreparedStatement.setLong(1, request.getOrgId());
-				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setLong(1, request.getOrg_id());
+				l_PreparedStatement.setLong(2, request.getOpr_id());
 				
 				l_ResultSet = l_PreparedStatement.executeQuery();
 				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
@@ -538,8 +538,8 @@ public class ComplaintService {
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
 				// Use parameter binding to avoid SQL injection
-				l_PreparedStatement.setLong(1, request.getOrgId());
-				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setLong(1, request.getOrg_id());
+				l_PreparedStatement.setLong(2, request.getOpr_id());
 				l_PreparedStatement.setString(3, departmentId);
 				
 				l_ResultSet = l_PreparedStatement.executeQuery();
@@ -575,8 +575,8 @@ public class ComplaintService {
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
 				// Use parameter binding to avoid SQL injection
-				l_PreparedStatement.setLong(1, request.getOrgId());
-				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setLong(1, request.getOrg_id());
+				l_PreparedStatement.setLong(2, request.getOpr_id());
 				l_PreparedStatement.setString(3, request.getId());
 				
 				l_ResultSet = l_PreparedStatement.executeQuery();
@@ -613,8 +613,8 @@ public class ComplaintService {
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
 				// Use parameter binding to avoid SQL injection
-				l_PreparedStatement.setLong(1, request.getOrgId());
-				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setLong(1, request.getOrg_id());
+				l_PreparedStatement.setLong(2, request.getOpr_id());
 				l_PreparedStatement.setString(3, request.getId());
 				l_PreparedStatement.setString(4, request.getId());
 				
@@ -674,8 +674,8 @@ public class ComplaintService {
 					sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
 			l_PreparedStatement.setString(1, request.getId());
-			l_PreparedStatement.setLong(2, request.getOprId());
-			l_PreparedStatement.setLong(3, request.getOrgId());
+			l_PreparedStatement.setLong(2, request.getOpr_id());
+			l_PreparedStatement.setLong(3, request.getOrg_id());
 			
 			ResultSet l_ResultSet = l_PreparedStatement.executeQuery();			
 			Complaint complaint = null;

@@ -91,7 +91,7 @@ public class FeedbackService {
 		        CommonRequestModel commonRequestModel = new CommonRequestModel();
 		        commonRequestModel.setOrg_id(feedback.getOrg_id());
 		        commonRequestModel.setOpr_id(feedback.getOpr_id());
-		        commonRequestModel.setId(feedbackId);
+		        commonRequestModel.setId(feedback.getComplaint_id());
 		        response = complaintService.getComplaintById(commonRequestModel);
 		        
 		        if(!response.getStatusCode().equals(HttpStatus.OK)) {

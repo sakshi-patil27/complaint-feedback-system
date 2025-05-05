@@ -38,8 +38,8 @@ public class DashboardServiceForHOD {
                            "GROUP BY status";
 
             try (PreparedStatement stmt = l_DBConnection.prepareStatement(query)) {
-                stmt.setLong(1, request.getOprId());
-                stmt.setLong(2, request.getOrgId());
+                stmt.setLong(1, request.getOpr_id());
+                stmt.setLong(2, request.getOrg_id());
                 stmt.setLong(3, departmentId);
 
                 try (ResultSet rs = stmt.executeQuery()) {
@@ -69,8 +69,8 @@ public class DashboardServiceForHOD {
                             ") AS sub";
 
                     try (PreparedStatement resolutionStmt = l_DBConnection.prepareStatement(resolutionTimeQuery)) {
-                        resolutionStmt.setLong(1, request.getOprId());
-                        resolutionStmt.setLong(2, request.getOrgId());
+                        resolutionStmt.setLong(1, request.getOpr_id());
+                        resolutionStmt.setLong(2, request.getOrg_id());
                         resolutionStmt.setLong(3, departmentId);
 
                         try (ResultSet resolutionRs = resolutionStmt.executeQuery()) {
@@ -107,8 +107,8 @@ public class DashboardServiceForHOD {
                            "GROUP BY dm.department_name, ct.status";
 
             try (PreparedStatement stmt = l_DBConnection.prepareStatement(query)) {
-                stmt.setLong(1, request.getOprId());
-                stmt.setLong(2, request.getOrgId());
+                stmt.setLong(1, request.getOpr_id());
+                stmt.setLong(2, request.getOrg_id());
                 stmt.setLong(3, departmentId);
 
                 ResultSet rs = stmt.executeQuery();
@@ -160,8 +160,8 @@ public class DashboardServiceForHOD {
                          "ORDER BY month DESC";
 
             try (PreparedStatement stmt = l_DBConnection.prepareStatement(sql)) {
-                stmt.setLong(1, request.getOrgId());
-                stmt.setLong(2, request.getOprId());
+                stmt.setLong(1, request.getOrg_id());
+                stmt.setLong(2, request.getOpr_id());
                 stmt.setLong(3, departmentId);
 
                 ResultSet rs = stmt.executeQuery();

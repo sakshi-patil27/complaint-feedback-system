@@ -55,8 +55,8 @@ public class DashboardUserService {
 	        // Get count per status
 	        try (PreparedStatement stmt = l_DBConnection.prepareStatement(statusCountQuery)) {
 	            stmt.setString(1, request.getId());
-	            stmt.setLong(2, request.getOprId());
-	            stmt.setLong(3, request.getOrgId());
+	            stmt.setLong(2, request.getOpr_id());
+	            stmt.setLong(3, request.getOrg_id());
 
 	            try (ResultSet rs = stmt.executeQuery()) {
 	                while (rs.next()) {
@@ -71,8 +71,8 @@ public class DashboardUserService {
 	        Long avgResolutionHours = null;
 	        try (PreparedStatement stmt = l_DBConnection.prepareStatement(resolutionTimeQuery)) {
 	            stmt.setString(1, request.getId());
-	            stmt.setLong(2, request.getOprId());
-	            stmt.setLong(3, request.getOrgId());
+	            stmt.setLong(2, request.getOpr_id());
+	            stmt.setLong(3, request.getOrg_id());
 
 	            try (ResultSet rs = stmt.executeQuery()) {
 	                if (rs.next()) {
@@ -118,8 +118,8 @@ public class DashboardUserService {
 	        sql.append("GROUP BY DATE_FORMAT(created_on, '%m') ORDER BY month DESC");
 
 	        PreparedStatement stmt = l_DBConnection.prepareStatement(sql.toString());
-	        stmt.setLong(1, request.getOrgId());
-	        stmt.setLong(2, request.getOprId());
+	        stmt.setLong(1, request.getOrg_id());
+	        stmt.setLong(2, request.getOpr_id());
 	        stmt.setString(3, request.getId());
 
 	        ResultSet rs = stmt.executeQuery();
@@ -177,8 +177,8 @@ public class DashboardUserService {
 	        // Status count
 	        try (PreparedStatement stmt = l_DBConnection.prepareStatement(statusCountQuery)) {
 	            stmt.setString(1, request.getId());
-	            stmt.setLong(2, request.getOprId());
-	            stmt.setLong(3, request.getOrgId());
+	            stmt.setLong(2, request.getOpr_id());
+	            stmt.setLong(3, request.getOrg_id());
 
 	            try (ResultSet rs = stmt.executeQuery()) {
 	                while (rs.next()) {
@@ -194,8 +194,8 @@ public class DashboardUserService {
 	        Long avgResolutionHours = null;
 	        try (PreparedStatement stmt = l_DBConnection.prepareStatement(resolutionTimeQuery)) {
 	            stmt.setString(1, request.getId());
-	            stmt.setLong(2, request.getOprId());
-	            stmt.setLong(3, request.getOrgId());
+	            stmt.setLong(2, request.getOpr_id());
+	            stmt.setLong(3, request.getOrg_id());
 
 	            try (ResultSet rs = stmt.executeQuery()) {
 	                if (rs.next()) {

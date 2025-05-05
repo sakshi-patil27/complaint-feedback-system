@@ -89,8 +89,8 @@ public class FeedbackService {
 		        
 		        // get complaint corresponding to the complaint 
 		        CommonRequestModel commonRequestModel = new CommonRequestModel();
-		        commonRequestModel.setOrgId(feedback.getOrg_id());
-		        commonRequestModel.setOprId(feedback.getOpr_id());
+		        commonRequestModel.setOrg_id(feedback.getOrg_id());
+		        commonRequestModel.setOpr_id(feedback.getOpr_id());
 		        commonRequestModel.setId(feedbackId);
 		        response = complaintService.getComplaintById(commonRequestModel);
 		        
@@ -188,8 +188,8 @@ public class FeedbackService {
 					sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
 			l_PreparedStatement.setString(1, request.getId());
-			l_PreparedStatement.setLong(2, request.getOprId());
-			l_PreparedStatement.setLong(3, request.getOrgId());
+			l_PreparedStatement.setLong(2, request.getOpr_id());
+			l_PreparedStatement.setLong(3, request.getOrg_id());
 			
 			ResultSet l_ResultSet = l_PreparedStatement.executeQuery();			
 			Feedback feedback = null;

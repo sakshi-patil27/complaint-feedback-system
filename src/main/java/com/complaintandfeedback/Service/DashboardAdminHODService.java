@@ -27,9 +27,10 @@ public class DashboardAdminHODService {
 	@Autowired
     private CommonUtils commonUtils;
 
-
 	public ResponseEntity<Object> getComplaintSummaryByStatusForAdmin(CommonRequestModel request) {
 	    try (Connection l_DBConnection = l_DataSource.getConnection()) {
+
+	        // 1. Prepare query to fetch complaint count by status
 	        StringBuilder query = new StringBuilder(
 	            "SELECT status, COUNT(*) AS count " +
 	            "FROM complaint_trn " +
@@ -44,8 +45,8 @@ public class DashboardAdminHODService {
 	        query.append("GROUP BY status");
 
 	        try (PreparedStatement stmt = l_DBConnection.prepareStatement(query.toString())) {
-	            stmt.setLong(1, request.getOprId());
-	            stmt.setLong(2, request.getOrgId());
+	            stmt.setLong(1, request.getOpr_id());
+	            stmt.setLong(2, request.getOrg_id());
 	            if (request.getId() != null) {
 	                stmt.setString(3, request.getId());
 	            }
@@ -54,6 +55,7 @@ public class DashboardAdminHODService {
 	                List<Map<String, Object>> resultList = new ArrayList<>();
 	                int totalComplaints = 0;
 
+	                // 2. Collect complaint count grouped by status
 	                while (rs.next()) {
 	                    Map<String, Object> obj = new HashMap<>();
 	                    String status = rs.getString("status");
@@ -64,7 +66,8 @@ public class DashboardAdminHODService {
 	                    totalComplaints += count;
 	                }
 
-	                String resolutionTimeQuery = 
+	                // 3. Query to calculate average resolution time (in hours)
+	                String resolutionTimeQuery =
 	                    "SELECT AVG(resolution_time_hours) AS avg_resolution_time_hours FROM (" +
 	                    " SELECT csh.complaint_id, TIMESTAMPDIFF(HOUR, " +
 	                    "   MIN(CASE WHEN csh.to_status = 'OPEN' THEN csh.changed_on END), " +
@@ -82,8 +85,8 @@ public class DashboardAdminHODService {
 	                resolutionTimeQuery += " GROUP BY csh.complaint_id ) AS sub";
 
 	                try (PreparedStatement resolutionStmt = l_DBConnection.prepareStatement(resolutionTimeQuery)) {
-	                    resolutionStmt.setLong(1, request.getOprId());
-	                    resolutionStmt.setLong(2, request.getOrgId());
+	                    resolutionStmt.setLong(1, request.getOpr_id());
+	                    resolutionStmt.setLong(2, request.getOrg_id());
 	                    if (request.getId() != null) {
 	                        resolutionStmt.setNString(3, request.getId());
 	                    }
@@ -94,12 +97,40 @@ public class DashboardAdminHODService {
 	                            avgResolutionTime = resolutionRs.getDouble("avg_resolution_time_hours");
 	                        }
 
-	                        Map<String, Object> response = new HashMap<>();
-	                        response.put("totalComplaints", totalComplaints);
-	                        response.put("statusSummary", resultList);
-	                        response.put("avgResolutionTime", avgResolutionTime);
+	                        // 4. Query to calculate average rating from feedback table
+	                        String ratingQuery =
+	                            "SELECT AVG(f.rating) AS avg_rating " +
+	                            "FROM feedback_trn f " +
+	                            "JOIN complaint_trn ct ON f.complaint_id = ct.complaint_id " +
+	                            "WHERE ct.is_active = 'YES' AND ct.opr_id = ? AND ct.org_id = ?";
 
-	                        return ResponseEntity.ok(response);
+	                        if (request.getId() != null) {
+	                            ratingQuery += " AND ct.department_id = ? ";
+	                        }
+
+	                        try (PreparedStatement ratingStmt = l_DBConnection.prepareStatement(ratingQuery)) {
+	                            ratingStmt.setLong(1, request.getOpr_id());
+	                            ratingStmt.setLong(2, request.getOrg_id());
+	                            if (request.getId() != null) {
+	                                ratingStmt.setNString(3, request.getId());
+	                            }
+
+	                            try (ResultSet ratingRs = ratingStmt.executeQuery()) {
+	                                double avgRating = 0.0;
+	                                if (ratingRs.next()) {
+	                                    avgRating = ratingRs.getDouble("avg_rating");
+	                                }
+
+	                                // 5. Build final response map
+	                                Map<String, Object> response = new HashMap<>();
+	                                response.put("totalComplaints", totalComplaints);
+	                                response.put("statusSummary", resultList);
+	                                response.put("avgResolutionTime", avgResolutionTime);
+	                                response.put("avgRating", avgRating);
+
+	                                return ResponseEntity.ok(response);
+	                            }
+	                        }
 	                    }
 	                }
 	            }
@@ -128,8 +159,8 @@ public class DashboardAdminHODService {
 	        query.append("GROUP BY dm.department_name, ct.status");
 
 	        PreparedStatement stmt = l_DBConnection.prepareStatement(query.toString());
-	        stmt.setLong(1, request.getOprId());
-	        stmt.setLong(2, request.getOrgId());
+	        stmt.setLong(1, request.getOpr_id());
+	        stmt.setLong(2, request.getOrg_id());
 	        if (request.getId() != null) {
 	            stmt.setString(3, request.getId());
 	        }
@@ -200,8 +231,8 @@ public class DashboardAdminHODService {
 	        sql.append("GROUP BY DATE_FORMAT(created_on, '%m') ORDER BY month DESC");
 
 	        PreparedStatement stmt = l_DBConnection.prepareStatement(sql.toString());
-	        stmt.setLong(1, request.getOrgId());
-	        stmt.setLong(2, request.getOprId());
+	        stmt.setLong(1, request.getOrg_id());
+	        stmt.setLong(2, request.getOpr_id());
 	        if (request.getId() != null) {
 	            stmt.setString(3, request.getId());
 	        }
@@ -248,8 +279,8 @@ public class DashboardAdminHODService {
 	        query.append("GROUP BY priority");
 
 	        try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
-	            stmt.setLong(1, request.getOprId());
-	            stmt.setLong(2, request.getOrgId());
+	            stmt.setLong(1, request.getOpr_id());
+	            stmt.setLong(2, request.getOrg_id());
 	            if (request.getId() != null) {
 	                stmt.setString(3, request.getId());
 	            }
@@ -280,7 +311,8 @@ public class DashboardAdminHODService {
 	        StringBuilder query = new StringBuilder(
 	            "SELECT complaint_id, subject, due_date, department_id, priority " +
 	            "FROM complaint_trn " +
-	            "WHERE is_active = 'YES' AND status = 'IN_PROGRESS' " +
+	            "WHERE is_active = 'YES' "+
+	            " AND status NOT IN ('CLOSED', 'ESCALATED') "+
 	            "AND due_date BETWEEN CURRENT_DATE() AND DATE_ADD(CURRENT_DATE(), INTERVAL 2 DAY) " +
 	            "AND opr_id = ? AND org_id = ? "
 	        );
@@ -290,8 +322,8 @@ public class DashboardAdminHODService {
 	        query.append("ORDER BY due_date ASC LIMIT 5");
 
 	        try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
-	            stmt.setLong(1, request.getOprId());
-	            stmt.setLong(2, request.getOrgId());
+	            stmt.setLong(1, request.getOpr_id());
+	            stmt.setLong(2, request.getOrg_id());
 	            if (request.getId() != null) {
 	                stmt.setString(3, request.getId());
 	            }

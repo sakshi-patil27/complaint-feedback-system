@@ -37,8 +37,8 @@ public class RoleService {
 				PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query,
 						ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
-				l_PreparedStatement.setLong(1, request.getOrgId());
-				l_PreparedStatement.setLong(2, request.getOprId());
+				l_PreparedStatement.setLong(1, request.getOrg_id());
+				l_PreparedStatement.setLong(2, request.getOpr_id());
 				ResultSet l_ResultSet = l_PreparedStatement.executeQuery();
 				l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
 				

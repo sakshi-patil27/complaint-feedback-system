@@ -213,7 +213,8 @@ public class SuggestionService {
 	                    + "FROM suggestion_trn s "
 	                    + "LEFT JOIN departments_mst d ON s.department_id = d.department_id "
 	                    + "LEFT JOIN account_user_mst cb ON s.created_by = cb.account_id "
-	                    + "WHERE s.org_id = ? AND s.opr_id = ?";
+	                    + "WHERE s.org_id = ? AND s.opr_id = ? "
+	                    + "ORDER BY created_on DESC";
 	            l_PreparedStatement = l_DBConnection.prepareStatement(
 	                    l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -243,7 +244,8 @@ public class SuggestionService {
 	                    + "FROM suggestion_trn s "
 	                    + "LEFT JOIN departments_mst d ON s.department_id = d.department_id "
 	                    + "LEFT JOIN account_user_mst cb ON s.created_by = cb.account_id "
-	                    + "WHERE s.org_id = ? AND s.opr_id = ? AND s.department_id = ?";
+	                    + "WHERE s.org_id = ? AND s.opr_id = ? AND s.department_id = ? "
+	                    + "ORDER BY created_on DESC";
 	            l_PreparedStatement = l_DBConnection.prepareStatement(
 	                    l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -274,7 +276,8 @@ public class SuggestionService {
 	                    + "FROM suggestion_trn s "
 	                    + "LEFT JOIN departments_mst d ON s.department_id = d.department_id "
 	                    + "LEFT JOIN account_user_mst cb ON s.created_by = cb.account_id "
-	                    + "WHERE s.org_id = ? AND s.opr_id = ? AND s.created_by = ?";
+	                    + "WHERE s.org_id = ? AND s.opr_id = ? AND s.created_by = ? "
+	                    + "ORDER BY created_on DESC";
 	            l_PreparedStatement = l_DBConnection.prepareStatement(
 	                    l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 

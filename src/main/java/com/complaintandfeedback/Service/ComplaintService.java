@@ -497,7 +497,8 @@ public class ComplaintService {
 			//For Admin role all the complaints are visible
 			if("ADMIN".equals(roleName)) {
 				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
-						+ "org_id = ? AND opr_id = ? AND department_id != '0333157788020511'";
+						+ "org_id = ? AND opr_id = ? AND department_id != '0333157788020511' "
+						+ "ORDER BY created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
@@ -531,7 +532,8 @@ public class ComplaintService {
 	                    + "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
 	                    + "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
 	                    + "WHERE c.is_active = 'YES' "
-	                    + "AND c.org_id = ? AND c.opr_id = ? AND c.department_id = ?";
+	                    + "AND c.org_id = ? AND c.opr_id = ? AND c.department_id = ? "
+	                    + "ORDER BY created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
@@ -567,7 +569,8 @@ public class ComplaintService {
 	                    + "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
 	                    + "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
 	                    + "WHERE c.is_active = 'YES' "
-	                    + "AND c.org_id = ? AND c.opr_id = ? AND c.created_by = ?";
+	                    + "AND c.org_id = ? AND c.opr_id = ? AND c.created_by = ? "
+	                    + "ORDER BY created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			
@@ -604,7 +607,8 @@ public class ComplaintService {
 	                    + "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
 	                    + "WHERE c.is_active = 'YES' "
 	                    + "AND c.org_id = ? AND c.opr_id = ? "
-	                    + "AND (c.created_by = ? OR c.assigned_to = ?)";
+	                    + "AND (c.created_by = ? OR c.assigned_to = ?) "
+	                    + "ORDER BY created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			

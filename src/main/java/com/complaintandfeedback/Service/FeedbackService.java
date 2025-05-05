@@ -123,12 +123,12 @@ public class FeedbackService {
 		        }
 		        
 		        //get email of assigned to
-		        response = authenticationService.getUserByAccountId(complaint.getAssigned_to());
-		        
-		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
-		        	l_DBConnection.rollback();
-		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save feedback");
-		        }
+//		        response = authenticationService.getUserByAccountId(complaint.getAssigned_to());
+//		        
+//		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
+//		        	l_DBConnection.rollback();
+//		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save feedback");
+//		        }
 		        AccountUser assignedTo = objectMapper.convertValue(response.getBody(), AccountUser.class);
 		        
 		        String feedbackDetails = emailService.buildFeedbackDetails(feedback);

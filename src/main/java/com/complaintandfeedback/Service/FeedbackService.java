@@ -3,6 +3,7 @@ package com.complaintandfeedback.Service;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -42,13 +43,13 @@ public class FeedbackService {
 	@Autowired
     private ObjectMapper objectMapper;
 
-	public ResponseEntity<Object> saveFeedback(Feedback feedback) {
+	public ResponseEntity<Object> saveFeedback(Feedback feedback) throws SQLException {
 		
 		Connection l_DBConnection = null;
 
 		try {
 		    l_DBConnection = l_DataSource.getConnection();
-		    
+		    l_DBConnection.setAutoCommit(false);
 		    // Generate a unique feedback ID (similar to complaint)
 		    String feedbackId = "FB" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
 		    feedback.setFeedback_id(feedbackId);  // Set the feedback ID
@@ -116,6 +117,7 @@ public class FeedbackService {
 		        if(l_ResultSet.next()) {
 		        	hodEmail = l_ResultSet.getString("email");
 		        	if(hodEmail == null || hodEmail.isBlank()) {
+		        		l_DBConnection.rollback();
 				    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email not Found");
 				    }
 		        }
@@ -140,15 +142,18 @@ public class FeedbackService {
 //		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save complaint");
 //		        }
 		    	
+		        l_DBConnection.commit();
 		    	return ResponseEntity.status(HttpStatus.CREATED).body(
 	                    new ResponseMessage("Success", "Feedback saved successfully", feedbackId)
 	            );
 		    }
 		    else {
+		    	l_DBConnection.rollback();
 		    	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save feedback");
 		    }
 		} 
 		catch (Exception e) {
+			l_DBConnection.rollback();
 	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 	    } 
 		finally {
@@ -156,6 +161,7 @@ public class FeedbackService {
 	            try {
 	                l_DBConnection.close();
 	            } catch (Exception e) {
+	            	l_DBConnection.rollback();
 	                return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 	            }
 	        }

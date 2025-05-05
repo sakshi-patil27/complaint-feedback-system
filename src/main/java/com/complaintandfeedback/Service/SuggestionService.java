@@ -3,6 +3,7 @@ package com.complaintandfeedback.Service;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -48,14 +49,15 @@ public class SuggestionService {
 	private EmailService emailService;
 	
 
-	public ResponseEntity<Object> saveSuggestion(SuggestionDto suggestionDto) {
+	public ResponseEntity<Object> saveSuggestion(SuggestionDto suggestionDto) throws SQLException {
 	    
 	    Connection l_DBConnection = null;
 
 	    try {
 	        l_DBConnection = l_DataSource.getConnection();
+	        l_DBConnection.setAutoCommit(false);
 	        
-	        Suggestion suggestion = new Suggestion();
+	        Suggestion suggestion = suggestionDto.getSuggestion();
 	        
 	        // Generate a unique suggestion ID
 	        String suggestionId = "SG" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
@@ -127,6 +129,7 @@ public class SuggestionService {
 		        if(l_ResultSet.next()) {
 		        	hodEmail = l_ResultSet.getString("email");
 		        	if(hodEmail == null || hodEmail.isBlank()) {
+		        		l_DBConnection.rollback();
 				    	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email not Found");
 				    }
 		        }
@@ -139,14 +142,17 @@ public class SuggestionService {
 //		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Failed to save suggestion");
 //		        }
 		        
+		        l_DBConnection.commit();
 	            return ResponseEntity.status(HttpStatus.CREATED).body(
 	                new ResponseMessage("Success", "Suggestion saved successfully", suggestionId)
 	            );
 	        } else {
+	        	l_DBConnection.rollback();
 	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to save suggestion");
 	        }
 	    } 
 	    catch (Exception e) {
+	    	l_DBConnection.rollback();
 	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 	    } 
 	    finally {
@@ -154,6 +160,7 @@ public class SuggestionService {
 	            try {
 	                l_DBConnection.close();
 	            } catch (Exception e) {
+	            	l_DBConnection.rollback();
 	                return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.UNAUTHORIZED, null);
 	            }
 	        }

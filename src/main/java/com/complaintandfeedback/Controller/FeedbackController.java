@@ -1,5 +1,7 @@
 package com.complaintandfeedback.Controller;
 
+import java.sql.SQLException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +21,7 @@ public class FeedbackController {
 	private FeedbackService feedbackService;
 	
 	@PostMapping("/saveFeedback")
-	public ResponseEntity<Object> saveFeedback(@RequestBody Feedback feedback){
+	public ResponseEntity<Object> saveFeedback(@RequestBody Feedback feedback) throws SQLException{
 		return feedbackService.saveFeedback(feedback);
 	}
 	

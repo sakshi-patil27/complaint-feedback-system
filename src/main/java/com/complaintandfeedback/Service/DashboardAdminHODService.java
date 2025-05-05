@@ -281,13 +281,13 @@ public class DashboardAdminHODService {
 	            "SELECT complaint_id, subject, due_date, department_id, priority " +
 	            "FROM complaint_trn " +
 	            "WHERE is_active = 'YES' AND status = 'IN_PROGRESS' " +
-	            "AND due_date BETWEEN CURRENT_DATE() AND DATE_ADD(CURRENT_DATE(), INTERVAL 3 DAY) " +
+	            "AND due_date BETWEEN CURRENT_DATE() AND DATE_ADD(CURRENT_DATE(), INTERVAL 2 DAY) " +
 	            "AND opr_id = ? AND org_id = ? "
 	        );
 	        if (request.getId() != null) {
 	            query.append("AND department_id = ? ");
 	        }
-	        query.append("ORDER BY due_date ASC LIMIT 5"); // 🔁 Added ordering and limit
+	        query.append("ORDER BY due_date ASC LIMIT 5");
 
 	        try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
 	            stmt.setLong(1, request.getOprId());

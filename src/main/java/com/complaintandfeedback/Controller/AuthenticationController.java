@@ -21,7 +21,7 @@ public class AuthenticationController {
 	private AuthenticationService authenticationService;
 
 	@PostMapping("/register")
-	public ResponseEntity<?> registerUser(@RequestBody AccountUser accountUser) {
+	public ResponseEntity<?> registerUser(@RequestBody AccountUser accountUser) throws Exception {
 			return authenticationService.registerUser(accountUser);
 	}
 

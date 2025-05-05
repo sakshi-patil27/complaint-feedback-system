@@ -517,6 +517,25 @@ public class ComplaintService {
 					};
 					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
 							typeReference);
+					for (Complaint complaint : l_data_List) {
+					    l_Query = "SELECT COUNT(*) as count "
+					            + "FROM feedback_trn f "
+					            + "WHERE f.is_active = 'YES' AND f.complaint_id = ?";
+
+					    l_PreparedStatement = l_DBConnection.prepareStatement(
+					            l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+
+					    l_PreparedStatement.setString(1, complaint.getComplaint_id());
+					    ResultSet l_ResultSet1 = l_PreparedStatement.executeQuery();
+					    
+					    int count = 0;
+	                    if (l_ResultSet1.next()) {
+	                        count = l_ResultSet1.getInt("count");
+	                    }
+	                    complaint.setHas_feedback(count > 0);
+					    
+					      // Add this setter to your Complaint model if not already present
+					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
 			}
@@ -554,6 +573,25 @@ public class ComplaintService {
 					};
 					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
 							typeReference);
+					for (Complaint complaint : l_data_List) {
+					    l_Query = "SELECT COUNT(*) as count "
+					            + "FROM feedback_trn f "
+					            + "WHERE f.is_active = 'YES' AND f.complaint_id = ?";
+
+					    l_PreparedStatement = l_DBConnection.prepareStatement(
+					            l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+
+					    l_PreparedStatement.setString(1, complaint.getComplaint_id());
+					    ResultSet l_ResultSet1 = l_PreparedStatement.executeQuery();
+					    
+					    int count = 0;
+	                    if (l_ResultSet1.next()) {
+	                        count = l_ResultSet1.getInt("count");
+	                    }
+	                    complaint.setHas_feedback(count > 0);
+					    
+					      // Add this setter to your Complaint model if not already present
+					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
 			}
@@ -591,6 +629,25 @@ public class ComplaintService {
 					};
 					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
 							typeReference);
+					for (Complaint complaint : l_data_List) {
+					    l_Query = "SELECT COUNT(*) as count "
+					            + "FROM feedback_trn f "
+					            + "WHERE f.is_active = 'YES' AND f.complaint_id = ?";
+
+					    l_PreparedStatement = l_DBConnection.prepareStatement(
+					            l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+
+					    l_PreparedStatement.setString(1, complaint.getComplaint_id());
+					    ResultSet l_ResultSet1 = l_PreparedStatement.executeQuery();
+					    
+					    int count = 0;
+	                    if (l_ResultSet1.next()) {
+	                        count = l_ResultSet1.getInt("count");
+	                    }
+	                    complaint.setHas_feedback(count > 0);
+					    
+					      // Add this setter to your Complaint model if not already present
+					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
 			}
@@ -630,6 +687,25 @@ public class ComplaintService {
 					};
 					List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
 							typeReference);
+					for (Complaint complaint : l_data_List) {
+					    l_Query = "SELECT COUNT(*) as count "
+					            + "FROM feedback_trn f "
+					            + "WHERE f.is_active = 'YES' AND f.complaint_id = ?";
+
+					    l_PreparedStatement = l_DBConnection.prepareStatement(
+					            l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+
+					    l_PreparedStatement.setString(1, complaint.getComplaint_id());
+					    ResultSet l_ResultSet1 = l_PreparedStatement.executeQuery();
+					    
+					    int count = 0;
+	                    if (l_ResultSet1.next()) {
+	                        count = l_ResultSet1.getInt("count");
+	                    }
+	                    complaint.setHas_feedback(count > 0);
+					    
+					      // Add this setter to your Complaint model if not already present
+					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
 			}
@@ -713,6 +789,22 @@ public class ComplaintService {
 			if (complaint == null) {
 			    return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Complaint not found");
 			} else {
+				sql = "SELECT COUNT(*) as count "
+				            + "FROM feedback_trn f "
+				            + "WHERE f.is_active = 'YES' AND f.complaint_id = ?";
+
+				    l_PreparedStatement = l_DBConnection.prepareStatement(
+				    		sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+
+				    l_PreparedStatement.setString(1, complaint.getComplaint_id());
+				    ResultSet l_ResultSet1 = l_PreparedStatement.executeQuery();
+				    
+				    int count = 0;
+                    if (l_ResultSet1.next()) {
+                        count = l_ResultSet1.getInt("count");
+                    }
+                    complaint.setHas_feedback(count > 0);
+				  
 			    return ResponseEntity.status(HttpStatus.OK).body(complaint);
 			}
 		}

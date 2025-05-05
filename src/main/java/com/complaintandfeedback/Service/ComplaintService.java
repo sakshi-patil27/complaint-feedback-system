@@ -218,6 +218,13 @@ public class ComplaintService {
         	l_DBConnection = l_DataSource.getConnection();
         	l_DBConnection.setAutoCommit(false);
 
+        	// BLV for complaint update
+        	if ("ASSIGNED".equals(complaint.getStatus()) && 
+        	    (complaint.getAssigned_to() == null || complaint.getAssigned_to().isEmpty())) {
+        	    return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, 
+        	        "Assigned to field cannot be empty when status is ASSIGNED");
+        	}
+        	
             String sql = "UPDATE complaint_trn SET subject = ?, description = ?, priority = ?, status = ?, " +
                          "department_id = ?, assigned_to = ?, modified_by = ?, modified_on = ?, due_date = ?, " +
                          "is_active = ?, opr_id = ?, org_id = ? WHERE complaint_id = ?";

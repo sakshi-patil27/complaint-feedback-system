@@ -1,5 +1,6 @@
 package com.complaintandfeedback.Service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,50 +70,87 @@ public class AuthenticationService {
 		this.complaintAndFeedbackApplication = complaintAndFeedbackApplication;
 	}
 
-	public ResponseEntity<?> registerUser(AccountUser accountUser) {
-		// Check if email already exists
-		String emailQuery = "SELECT COUNT(*) FROM account_user_mst WHERE email = ?";
-		Integer count = jdbcTemplate.queryForObject(emailQuery, Integer.class, accountUser.getEmail());
-		
-		if (count != null && count > 0) {	
-			return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Email already exists");
-		}
-		
-//		String roleIdQuery = "SELECT role_id FROM roles_mst WHERE LOWER(role_name) = LOWER(?) AND org_id = ? AND opr_id = ?";
-//		Integer deptHeadRoleId = jdbcTemplate.queryForObject(roleIdQuery, Integer.class, "DEPARTMENT_HEAD",accountUser.getOrgId(),accountUser.getOprId());
-//		// Step 3: If user is trying to register as department head, check if one already exists
-//		if (Objects.equals(accountUser.getRoleId(), deptHeadRoleId)) {
-//			String headExistsQuery = "SELECT COUNT(*) FROM account_user_mst WHERE department_id = ? AND role_id = ? AND org_id = ? AND opr_id = ?";
-//			Integer headCount = jdbcTemplate.queryForObject(
-//					headExistsQuery,
-//					Integer.class,
-//					accountUser.getDepartmentId(),
-//					deptHeadRoleId,
-//					accountUser.getOrgId(),
-//					accountUser.getOprId()
-//			);
-//			if (headCount != null && headCount > 0) {
-//				return commonUtils.responseErrorHeader(null, null, HttpStatus.CONFLICT,
-//						"Department Head already exists for this department in the same organization and operator");
-//			}
-//		}
-//
-//		
-		// Generate accountId
-		String accountId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-		accountUser.setAccount_id(accountId);
-		accountUser.setCreated_on(LocalDateTime.now().format(formatter));
-		accountUser.setIs_active("YES");
-		accountUser.setPassword(passwordEncoder.encode(accountUser.getPassword()));
-		// Insert user
-		String insertQuery = "INSERT INTO account_user_mst (account_id, name, email, phone_no, password, department_id, role_id, org_id, opr_id, created_by, created_on, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-		jdbcTemplate.update(insertQuery, accountUser.getAccount_id(), accountUser.getName(), accountUser.getEmail(),
-				accountUser.getPhone_no(), accountUser.getPassword(), accountUser.getDepartment_id(),
-				accountUser.getRole_id(), accountUser.getOrg_id(), accountUser.getOpr_id(), accountUser.getCreated_by(),
-				accountUser.getCreated_on(), accountUser.getIs_active());
+	public ResponseEntity<?> registerUser(AccountUser accountUser) throws Exception {
+	    try {
+	        // 1. Check if email already exists
+	        String emailQuery = "SELECT COUNT(*) FROM account_user_mst WHERE email = ?";
+	        Integer count = jdbcTemplate.queryForObject(emailQuery, Integer.class, accountUser.getEmail());
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseMessage("Success","User registered successfully",accountId));
+	        if (count != null && count > 0) {
+	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Email already exists");
+	        }
+
+	        // 2. Get role_id for HOD using TRIM + LOWER
+	        String roleIdQuery = "SELECT role_id FROM roles_mst WHERE TRIM(LOWER(role_name)) = TRIM(LOWER(?)) AND org_id = ? AND opr_id = ?";
+	        List<String> roleIds = jdbcTemplate.query(
+	            roleIdQuery,
+	            new Object[]{"HOD", accountUser.getOrg_id(), accountUser.getOpr_id()},
+	            (rs, rowNum) -> rs.getString("role_id")
+	        );
+
+	        if (roleIds == null || roleIds.isEmpty()) {
+	            return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
+	                    "Role 'HOD' not found for this organization and operator");
+	        }
+
+	        String deptHeadRoleId = roleIds.get(0); // Safe now
+
+	        // 3. Check if user is registering as department head
+	        if (deptHeadRoleId != null && Objects.equals(accountUser.getRole_id(), deptHeadRoleId)) {
+	            String headExistsQuery = "SELECT COUNT(*) FROM account_user_mst WHERE department_id = ? AND role_id = ? AND org_id = ? AND opr_id = ?";
+	            Integer headCount = jdbcTemplate.queryForObject(
+	                headExistsQuery,
+	                Integer.class,
+	                accountUser.getDepartment_id(),
+	                deptHeadRoleId,
+	                accountUser.getOrg_id(),
+	                accountUser.getOpr_id()
+	            );
+
+	            if (headCount != null && headCount > 0) {
+	                return commonUtils.responseErrorHeader(null, null, HttpStatus.CONFLICT,
+	                    "Department Head already exists for this department in the same organization and operator");
+	            }
+	        }
+
+	        // 4. Proceed with registration
+	        String accountId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+	        accountUser.setAccount_id(accountId);
+	        accountUser.setCreated_on(LocalDateTime.now().format(formatter));
+	        accountUser.setIs_active("YES");
+	        accountUser.setPassword(passwordEncoder.encode(accountUser.getPassword()));
+
+	        String insertQuery = "INSERT INTO account_user_mst (account_id, name, email, phone_no, password, department_id, role_id, org_id, opr_id, created_by, created_on, is_active) " +
+	                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+	        jdbcTemplate.update(insertQuery,
+	            accountUser.getAccount_id(),
+	            accountUser.getName(),
+	            accountUser.getEmail(),
+	            accountUser.getPhone_no(),
+	            accountUser.getPassword(),
+	            accountUser.getDepartment_id(),
+	            accountUser.getRole_id(),
+	            accountUser.getOrg_id(),
+	            accountUser.getOpr_id(),
+	            accountUser.getCreated_by(),
+	            accountUser.getCreated_on(),
+	            accountUser.getIs_active()
+	        );
+
+	        return ResponseEntity.status(HttpStatus.CREATED)
+	                             .body(new ResponseMessage("Success", "User registered successfully", accountId));
+	    } catch (Throwable e) {
+	        Throwable cause = e.getCause();
+	        if (cause != null) {
+	            cause.printStackTrace(); // Root cause
+	        } else {
+	            e.printStackTrace();
+	        }
+	        throw new InvocationTargetException(e);
+	    }
 	}
+
 	
 	public ResponseEntity<?> login(String email, String password) {
 		String sql = "SELECT a.account_id,a.password,a.org_id,a.opr_id,a.role_id,a.name,org.org_name as l_org_name,roles_mst.role_name AS l_role_name "

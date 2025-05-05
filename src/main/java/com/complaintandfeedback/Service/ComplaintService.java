@@ -497,7 +497,7 @@ public class ComplaintService {
 			//For Admin role all the complaints are visible
 			if("ADMIN".equals(roleName)) {
 				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
-						+ "org_id = ? AND opr_id = ? AND department_id = '0333157788020511'";
+						+ "org_id = ? AND opr_id = ? AND department_id != '0333157788020511'";
 				l_PreparedStatement = l_DBConnection.prepareStatement(
 				        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			

@@ -209,7 +209,7 @@ public class FeedbackService {
 			    // Mapping Timestamp fields
 			    feedback.setCreated_by(l_ResultSet.getString("created_by"));
 			    feedback.setModified_on(l_ResultSet.getTimestamp("modified_on"));
-			    
+			    feedback.setCreated_on(l_ResultSet.getTimestamp("created_on"));
 			    feedback.setModified_by(l_ResultSet.getString("modified_by"));
 			    feedback.setIs_active(l_ResultSet.getString("is_active"));
 			    

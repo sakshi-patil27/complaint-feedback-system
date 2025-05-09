@@ -13,7 +13,7 @@ public class AttachmentTrn {
     private String entity_type;
     private String entity_id;
     private String file_path;
-    private String Stored_file_name;
+    private String stored_file_name;
     private String Uploaded_file_name;
     private String uploaded_by;
     private String uploaded_on;

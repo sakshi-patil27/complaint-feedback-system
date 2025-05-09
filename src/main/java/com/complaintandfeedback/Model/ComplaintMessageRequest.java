@@ -15,4 +15,5 @@ public class ComplaintMessageRequest {
 	private String senderId;
 	private String receiverId;
 	private String message;
+	private AttachmentTrn attachmentTrn;
 }

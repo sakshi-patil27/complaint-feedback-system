@@ -10,7 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Timestamp;
+import java.sql.Connection;
 import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Time;
 import java.time.LocalDateTime;
@@ -28,7 +30,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import com.complaintandfeedback.Model.AttachmentTrn;
 import com.complaintandfeedback.Model.ResponseHeaderModel;
+import com.complaintandfeedback.Model.ResponseMessage;
 
 @Component
 public class CommonUtils {
@@ -204,4 +208,48 @@ public class CommonUtils {
 		}
 		return fileContent;
 	}
+    
+    public ResponseEntity<Object> saveAttachment(AttachmentTrn attachmentTrn, Connection connection) {
+        try {
+            String l_File_Path = gFN_Uploaded_File_Path();
+            String l_Query = "INSERT INTO attachment_trn (attachment_id, entity_type, entity_id, "
+                    + "file_path, Stored_file_name, Uploaded_file_name, uploaded_by, uploaded_on) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+            PreparedStatement l_PreparedStatement = connection.prepareStatement(l_Query);
+
+            String attachmentId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+            attachmentTrn.setAttachment_id(attachmentId);
+
+            String l_Storage_File_Name = gFN_Upload_File(
+                    attachmentTrn.getL_encrypted_file(),
+                    attachmentTrn.getUploaded_file_name(),
+                    l_File_Path,
+                    attachmentTrn.getEntity_id()
+            );
+
+            l_PreparedStatement.setString(1, attachmentId);
+            l_PreparedStatement.setString(2, attachmentTrn.getEntity_type());
+            l_PreparedStatement.setString(3, attachmentTrn.getEntity_id());
+            l_PreparedStatement.setString(4, l_File_Path);
+            l_PreparedStatement.setString(5, l_Storage_File_Name);
+            l_PreparedStatement.setString(6, attachmentTrn.getUploaded_file_name());
+            l_PreparedStatement.setString(7, attachmentTrn.getUploaded_by());
+            l_PreparedStatement.setString(8, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            int rowsAffected = l_PreparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ResponseMessage("Success", "Attachment uploaded successfully", attachmentId));
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseMessage("Failure", "Attachment upload failed", attachmentTrn.getUploaded_file_name()));
+            }
+
+        } catch (Exception ex) {
+            return responseErrorHeader(ex, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+        }
+    }
+
 }

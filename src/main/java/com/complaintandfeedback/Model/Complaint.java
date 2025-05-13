@@ -53,6 +53,12 @@ public class Complaint {
 
     private String is_active;
     
+    private String is_anonymous;
+    
+    private String category_id;
+    
+    private String tag_id;
+    
     private String l_previous_status;
     
     private String l_department_name;
@@ -62,5 +68,10 @@ public class Complaint {
     private String l_assigned_to;
     
     private String l_deffered_reason;
+    
     private boolean has_feedback;
+    
+    private String l_category_name;
+    
+    private String l_tag_name;
 }

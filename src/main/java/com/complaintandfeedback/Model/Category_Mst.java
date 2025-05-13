@@ -34,4 +34,6 @@ public class Category_Mst {
 
     @Size(max = 3)
     private String is_active;
+    private String created_by;
+    private String modified_by;
 }

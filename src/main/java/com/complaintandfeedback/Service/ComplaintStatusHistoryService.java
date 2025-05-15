@@ -110,9 +110,12 @@ public class ComplaintStatusHistoryService {
 		try {
 			l_DBConnection = l_DataSource.getConnection();
 			
-			String l_Query = "SELECT * FROM dbfnd.complaint_status_history WHERE "
-					+ "complaint_id = ? "
-					+ "ORDER BY changed_on desc";
+			String l_Query = "SELECT ch.*, " +
+	                 "a.name AS l_changed_by " +
+	                 "FROM complaint_status_history ch " +
+	                 "LEFT JOIN account_user_mst a ON ch.changed_by = a.account_id " +
+	                 "WHERE complaint_id = ? " +
+	                 "ORDER BY changed_on DESC";
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(
 			        l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		

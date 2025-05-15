@@ -20,4 +20,5 @@ public class ComplaintStatusHistory {
 	    private String changed_by;
 	    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	    private Timestamp changed_on;
+	    private String l_changed_by;
 }

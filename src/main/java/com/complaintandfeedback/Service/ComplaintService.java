@@ -90,15 +90,15 @@ public class ComplaintService {
 			
 			// if priority is blank or null then get priority using Sentiment Analysis
 			String priority = null;
-			if("very negative".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))
-				|| "Negative".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))) {
+			if("Very negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
+				|| "Negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
 				priority = "HIGH";
 			}
-			else if ("Neutral".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))) {
+			else if ("Neutral".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
 				priority = "MEDIUM";
 			}
-			else if ("Positive".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))
-					|| "Very positive".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))) {
+			else if ("Positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
+					|| "Very positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
 				priority = "LOW";
 			}			
 			

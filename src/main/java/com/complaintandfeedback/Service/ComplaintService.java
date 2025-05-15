@@ -695,12 +695,13 @@ public class ComplaintService {
 						complaint.setHas_feedback(count > 0);
 
 						// if anonymous flag is true then set created by blank
-						// Also make sure created by is not set "" when HOD himself creates anonymous
-						// complaint
+						// Also make sure created by is not set "" when employee himself creates
+						// anonymous complaint
 						if ("YES".equals(complaint.getIs_anonymous())
 								&& !request.getId().equals(complaint.getCreated_by())) {
 							complaint.setCreated_by("");
 							complaint.setModified_by("");
+							complaint.setL_created_by("");
 						}
 						
 						String[] tagIdArray = complaint.getTag_id().split(",\\s*");
@@ -781,6 +782,16 @@ public class ComplaintService {
 						}
 						complaint.setHas_feedback(count > 0);
 
+						// if anonymous flag is true then set created by blank
+						// Also make sure created by is not set "" when employee himself creates
+						// anonymous complaint
+						if ("YES".equals(complaint.getIs_anonymous())
+								&& !request.getId().equals(complaint.getCreated_by())) {
+							complaint.setCreated_by("");
+							complaint.setModified_by("");
+							complaint.setL_created_by("");
+						}
+						
 						String[] tagIdArray = complaint.getTag_id().split(",\\s*");
 						if (tagIdArray != null || complaint.getTag_id().isEmpty()) {
 							String tagId = "";
@@ -807,6 +818,7 @@ public class ComplaintService {
 							complaint.setL_tag_name(tagNamesCsv);
 
 						}
+												
 					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
@@ -866,6 +878,7 @@ public class ComplaintService {
 								&& !request.getId().equals(complaint.getCreated_by())) {
 							complaint.setCreated_by("");
 							complaint.setModified_by("");
+							complaint.setL_created_by("");
 						}
 
 						String[] tagIdArray = complaint.getTag_id().split(",\\s*");
@@ -1046,6 +1059,7 @@ public class ComplaintService {
 				if ("YES".equals(complaint.getIs_anonymous()) && !accountId.equals(complaint.getCreated_by())) {
 					complaint.setCreated_by("");
 					complaint.setModified_by("");
+					complaint.setL_created_by("");
 				}
 
 				return ResponseEntity.status(HttpStatus.OK).body(complaint);

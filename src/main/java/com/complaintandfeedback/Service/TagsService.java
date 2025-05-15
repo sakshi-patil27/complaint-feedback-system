@@ -40,8 +40,8 @@ public class TagsService {
             String tagId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
             tags.setTag_id(tagId);
 
-            String l_Query = "INSERT INTO tags_mst (tag_id, tag_name, category_id, org_id, opr_id, is_active, created_by, created_on) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String l_Query = "INSERT INTO tags_mst (tag_id, tag_name, category_id, org_id, opr_id, is_active, created_by, created_on, modified_by,modified_on ) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
 
@@ -53,7 +53,8 @@ public class TagsService {
             l_PreparedStatement.setString(6, tags.getIs_active());
             l_PreparedStatement.setString(7, tags.getCreated_by());
             l_PreparedStatement.setString(8, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-
+            l_PreparedStatement.setString(9, tags.getModified_by());
+            l_PreparedStatement.setString(10, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             int rowsAffected = l_PreparedStatement.executeUpdate();
 
             if (rowsAffected > 0) {

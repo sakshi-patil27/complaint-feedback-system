@@ -1,21 +1,28 @@
 package com.complaintandfeedback.Service;
 
+import java.net.http.HttpHeaders;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
 import com.complaintandfeedback.DTO.ComplaintDto;
@@ -26,8 +33,10 @@ import com.complaintandfeedback.Model.ComplaintStatusHistory;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.complaintandfeedback.nlp.SentimentAnalysis;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.swagger.v3.oas.models.media.MediaType;
 import jakarta.validation.Valid;
 
 @Service
@@ -56,6 +65,8 @@ public class ComplaintService {
 
 	@Autowired
 	private SentimentAnalysis sentimentAnalysis;
+	
+	RestTemplate restTemplate = new RestTemplate();
 
 	// private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd
 	// HH:mm:ss");
@@ -86,35 +97,80 @@ public class ComplaintService {
 			l_PreparedStatement.setLong(2, complaint.getOrg_id());
 			l_PreparedStatement.setLong(3, complaint.getOpr_id());
 			l_PreparedStatement.setString(4, complaint.getSubject());
-			l_PreparedStatement.setString(5, complaint.getDescription());
+			l_PreparedStatement.setString(5, complaint.getDescription());	
 
-			// if priority is blank or null then get priority using Sentiment Analysis
-			String priority = null;
-			if ("Very negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
-					|| "Negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
-				priority = "HIGH";
-			} else if ("Neutral".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
-				priority = "MEDIUM";
-			} else if ("Positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
-					|| "Very positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
-				priority = "LOW";
-			}
-
-			String text = (complaint.getPriority() == null || complaint.getPriority().isBlank()) ? priority
+			String text = (complaint.getPriority() == null || complaint.getPriority().isBlank()) 
+					? priorityBySentiment(complaint)
 					: complaint.getPriority();
 
 			l_PreparedStatement.setString(6, text);// set priority
 
 			l_PreparedStatement.setString(7, complaint.getStatus());
+			
+			
+			//for ai integration code for department
+			if(complaint.getDepartment_id() == null || complaint.getDepartment_id().isEmpty()) {
+				CommonRequestModel request=new CommonRequestModel();
+				request.setOpr_id(complaint.getOpr_id());
+				request.setOrg_id(complaint.getOrg_id());
+			    Map<String, Object> payload = (Map<String, Object>) getAllDepartmentWithMappedCategory(request);
+			    String url = "http://localhost:8000/analyze";
+			    Map<String, Object> requestBody = new HashMap<>();
+			    requestBody.put("text", complaint.getDescription());
+			    requestBody.put("label_mapping", payload.get("label_mapping"));
+			    ObjectMapper mapper = new ObjectMapper();
+			    String jsonPayload = mapper.writeValueAsString(requestBody); 
+		        HttpHeaders headers = new HttpHeaders();
+		        headers.setContentType(MediaType.APPLICATION_JSON);
+		        HttpEntity<String> request1 = new HttpEntity<>(jsonPayload, headers);
+		        ResponseEntity<String> response = restTemplate.postForEntity(url, request1, String.class);
+		        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+		            JsonNode jsonNode = mapper.readTree(response.getBody());
+		            complaint.setDepartment_id(jsonNode.get("department_id").asText());
+		            complaint.setCategory_id(jsonNode.get("category_id").asText());
+		        }
+			}
+			
 			l_PreparedStatement.setString(8, complaint.getDepartment_id());
 			l_PreparedStatement.setString(9, complaint.getCreated_by());
 			l_PreparedStatement.setString(10, complaint.getAssigned_to());
-			l_PreparedStatement.setTimestamp(11, complaint.getCreated_on());
-			l_PreparedStatement.setTimestamp(12, complaint.getModified_on());
+			l_PreparedStatement.setString(11, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+			l_PreparedStatement.setString(12, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 			l_PreparedStatement.setString(13, complaint.getModified_by());
-			l_PreparedStatement.setTimestamp(14, complaint.getDue_date());
+			if (complaint.getDue_date() != null) {
+				// Use setTimestamp for accurate handling of Timestamp type
+				l_PreparedStatement.setTimestamp(14, Timestamp.valueOf(complaint.getDue_date().toLocalDateTime()));
+			} else {
+				// For null due_date, set tomorrow's date correctly
+				LocalDateTime tomorrow = LocalDateTime.now().plusDays(1);
+				l_PreparedStatement.setTimestamp(14, Timestamp.valueOf(tomorrow));
+			}
 			l_PreparedStatement.setString(15, complaint.getIs_active());
 			l_PreparedStatement.setString(16, complaint.getIs_anonymous());
+			
+			//for ai integration code for category
+			if(!complaint.getDepartment_id().isEmpty() && complaint.getCategory_id().isEmpty()) {
+				CommonRequestModel request=new CommonRequestModel();
+				request.setOpr_id(complaint.getOpr_id());
+				request.setOrg_id(complaint.getOrg_id());
+				request.setId(complaint.getDepartment_id());
+			    Map<String, Object> payload = (Map<String, Object>) getAllDepartmentWithMappedCategory(request);
+			    String url = "http://localhost:8000/analyze";
+			    Map<String, Object> requestBody = new HashMap<>();
+			    requestBody.put("text", complaint.getDescription());
+			    requestBody.put("label_mapping", payload.get("label_mapping"));
+			    ObjectMapper mapper = new ObjectMapper();
+			    String jsonPayload = mapper.writeValueAsString(requestBody); 
+		        HttpHeaders headers = new HttpHeaders();
+		        headers.setContentType(MediaType.APPLICATION_JSON);
+		        HttpEntity<String> request1 = new HttpEntity<>(jsonPayload, headers);
+		        ResponseEntity<String> response = restTemplate.postForEntity(url, request1, String.class);
+		        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+		            JsonNode jsonNode = mapper.readTree(response.getBody());
+		            complaint.setCategory_id(jsonNode.get("category_id").asText());
+		        }
+			}
+			
 			l_PreparedStatement.setString(17, complaint.getCategory_id());
 			l_PreparedStatement.setString(18, complaint.getTag_id());
 
@@ -124,16 +180,7 @@ public class ComplaintService {
 //	            String tomorrow = LocalDateTime.now().plusDays(1).format(formatter);
 //	            l_PreparedStatement.setString(13, tomorrow);
 //	        }
-			if (complaint.getDue_date() != null) {
-				// Use setTimestamp for accurate handling of Timestamp type
-				l_PreparedStatement.setTimestamp(13, Timestamp.valueOf(complaint.getDue_date().toLocalDateTime()));
-			} else {
-				// For null due_date, set tomorrow's date correctly
-				LocalDateTime tomorrow = LocalDateTime.now().plusDays(1);
-				l_PreparedStatement.setTimestamp(13, Timestamp.valueOf(tomorrow));
-			}
-			l_PreparedStatement.setString(14, complaint.getIs_active());
-			l_PreparedStatement.setLong(15, complaint.getOpr_id());
+			
 
 			int rowsAffected = l_PreparedStatement.executeUpdate();
 
@@ -267,7 +314,7 @@ public class ComplaintService {
 			l_PreparedStatement.setString(5, complaint.getDepartment_id());
 			l_PreparedStatement.setString(6, complaint.getAssigned_to());
 			l_PreparedStatement.setString(7, complaint.getModified_by());
-			l_PreparedStatement.setTimestamp(8, complaint.getModified_on());
+			l_PreparedStatement.setString(8, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 			l_PreparedStatement.setTimestamp(9, complaint.getDue_date());
 			l_PreparedStatement.setString(10, complaint.getIs_active());
 			l_PreparedStatement.setLong(11, complaint.getOpr_id());
@@ -1018,6 +1065,80 @@ public class ComplaintService {
 				}
 		}
 
+	}
+	
+	public String priorityBySentiment(Complaint complaint) {
+		String priority = null;
+		// if priority is blank or null then get priority using Sentiment Analysis
+		if ("Very negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
+				|| "Negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
+			priority = "HIGH";
+		} else if ("Neutral".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
+			priority = "MEDIUM";
+		} else if ("Positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
+				|| "Very positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
+			priority = "LOW";
+		}
+		return priority;
+	}
+	
+	public Map<String, Object> getAllDepartmentWithMappedCategory(CommonRequestModel request) {
+	    Map<String, Object> response = new HashMap<>();
+	    Map<String, Map<String, Object>> labelMapping = new HashMap<>();
+
+	    try (Connection conn = l_DataSource.getConnection()) {
+	        StringBuilder query = new StringBuilder(
+	            "SELECT d.department_id, d.department_name, c.category_id, c.category_name " +
+	            "FROM departments_mst d " +
+	            "JOIN category_mst c ON d.department_id = c.department_id " +
+	            "WHERE d.is_active = 'YES' AND c.is_active = 'YES' " +
+	            "AND d.org_id = ? AND d.opr_id = ?"
+	        );
+
+	        if (request.getId() != null && !request.getId().trim().isEmpty()) {
+	            query.append(" AND d.department_id = ?");
+	        }
+
+	        PreparedStatement ps = conn.prepareStatement(query.toString());
+	        ps.setLong(1, request.getOrg_id());
+	        ps.setLong(2, request.getOpr_id());
+
+	        if (request.getId() != null && !request.getId().trim().isEmpty()) {
+	            ps.setString(3, request.getId());
+	        }
+
+	        ResultSet rs = ps.executeQuery();
+
+	        while (rs.next()) {
+	            String deptName = rs.getString("department_name");
+	            String deptId = rs.getString("department_id");
+	            String catId = rs.getString("category_id");
+	            String catName = rs.getString("category_name");
+
+	            if (!labelMapping.containsKey(deptName)) {
+	                Map<String, Object> deptInfo = new HashMap<>();
+	                deptInfo.put("id", deptId);
+	                deptInfo.put("categories", new ArrayList<Map<String, Object>>());
+	                labelMapping.put(deptName, deptInfo);
+	            }
+
+	            Map<String, Object> deptInfo = labelMapping.get(deptName);
+	            List<Map<String, Object>> categories = (List<Map<String, Object>>) deptInfo.get("categories");
+
+	            Map<String, Object> category = new HashMap<>();
+	            category.put("id", catId);
+	            category.put("name", catName);
+	            categories.add(category);
+	        }
+
+	        response.put("label_mapping", labelMapping);
+	        return response;
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        response.put("error", "Database error occurred: " + e.getMessage());
+	        return response;
+	    }
 	}
 
 }

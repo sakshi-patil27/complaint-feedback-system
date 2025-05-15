@@ -96,7 +96,7 @@ public class ComplaintService {
 			l_PreparedStatement.setLong(3, complaint.getOpr_id());
 			l_PreparedStatement.setString(4, complaint.getSubject());
 			l_PreparedStatement.setString(5, complaint.getDescription());	
-
+//
 			String text = (complaint.getPriority() == null || complaint.getPriority().isBlank()) 
 					? priorityBySentiment(complaint)
 					: complaint.getPriority();
@@ -1088,7 +1088,7 @@ public class ComplaintService {
 	        StringBuilder query = new StringBuilder(
 	            "SELECT d.department_id, d.department_name, c.category_id, c.category_name " +
 	            "FROM departments_mst d " +
-	            "JOIN category_mst c ON d.department_id = c.department_id " +
+	            "LEFT JOIN category_mst c ON d.department_id = c.department_id " +
 	            "WHERE d.is_active = 'YES' AND c.is_active = 'YES' " +
 	            "AND d.org_id = ? AND d.opr_id = ?"
 	        );

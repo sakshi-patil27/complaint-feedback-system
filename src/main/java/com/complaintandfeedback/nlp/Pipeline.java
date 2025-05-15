@@ -8,7 +8,7 @@ public class Pipeline {
 
 	private static Properties properties;
 
-	private static String propertiesName = "tokenize, ssplit, pos, lemma, parse, sentiment";
+	private static String propertiesName = "tokenize, ssplit, parse, sentiment";
 
 	private static StanfordCoreNLP stanfordCoreNLP;
 

@@ -53,7 +53,7 @@ public class ComplaintService {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-	
+
 	@Autowired
 	private SentimentAnalysis sentimentAnalysis;
 
@@ -87,26 +87,24 @@ public class ComplaintService {
 			l_PreparedStatement.setLong(3, complaint.getOpr_id());
 			l_PreparedStatement.setString(4, complaint.getSubject());
 			l_PreparedStatement.setString(5, complaint.getDescription());
-			
+
 			// if priority is blank or null then get priority using Sentiment Analysis
 			String priority = null;
-			if("Very negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
-				|| "Negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
+			if ("Very negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
+					|| "Negative".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
 				priority = "HIGH";
-			}
-			else if ("Neutral".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
+			} else if ("Neutral".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
 				priority = "MEDIUM";
-			}
-			else if ("Positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
+			} else if ("Positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))
 					|| "Very positive".equals(sentimentAnalysis.getSentiment(complaint.getDescription()))) {
 				priority = "LOW";
-			}			
-			
-			String text = (complaint.getPriority() == null || complaint.getPriority().isBlank())
-				    ? priority : complaint.getPriority();
+			}
 
-			l_PreparedStatement.setString(6, text);//set priority
-			
+			String text = (complaint.getPriority() == null || complaint.getPriority().isBlank()) ? priority
+					: complaint.getPriority();
+
+			l_PreparedStatement.setString(6, text);// set priority
+
 			l_PreparedStatement.setString(7, complaint.getStatus());
 			l_PreparedStatement.setString(8, complaint.getDepartment_id());
 			l_PreparedStatement.setString(9, complaint.getCreated_by());
@@ -529,9 +527,19 @@ public class ComplaintService {
 
 			// For Admin role all the complaints are visible
 			if ("ADMIN".equals(roleName)) {
-				l_Query = "SELECT * FROM complaint_trn WHERE is_active = 'YES' AND "
-						+ "org_id = ? AND opr_id = ? AND department_id != '0333157788020511' "
-						+ "ORDER BY created_on DESC";
+				l_Query = "SELECT c.*,"
+						+ "cb.name AS l_created_by, "
+						+ "at.name AS l_assigned_to, " 
+						+ "d.department_name AS l_department_name, "
+						+ "cat.category_name AS l_category_name "
+						+ "FROM complaint_trn c "
+						+ "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
+						+ "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
+						+ "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+						+ "LEFT JOIN category_mst cat ON c.category_id = cat.category_id "
+						+ "WHERE c.is_active = 'YES' AND "
+						+ "c.org_id = ? AND c.opr_id = ? AND c.department_id != '0333157788020511' "
+						+ "ORDER BY c.created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE,
 						ResultSet.CONCUR_READ_ONLY);
 
@@ -564,7 +572,32 @@ public class ComplaintService {
 						}
 						complaint.setHas_feedback(count > 0);
 
-						// Add this setter to your Complaint model if not already present
+						String[] tagIdArray = complaint.getTag_id().split(",\\s*");
+						if (tagIdArray != null || complaint.getTag_id().isEmpty()) {
+							String tagId = "";
+							for (int i = 0; i < tagIdArray.length; i++) {
+								if (i > 0) {
+									tagId += ",";
+								}
+								tagId += "'" + tagIdArray[i] + "'"; 
+							}
+
+							String sql = "SELECT tag_name FROM tags_mst WHERE tag_id IN (" + tagId + ")";
+
+							l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+							ResultSet l_ResultSet2 = l_PreparedStatement.executeQuery();
+							StringBuilder tagNamesBuilder = new StringBuilder();
+							while (l_ResultSet2.next()) {
+							    if (tagNamesBuilder.length() > 0) {
+							        tagNamesBuilder.append(",");
+							    }
+							    tagNamesBuilder.append(l_ResultSet2.getString("tag_name"));
+							}
+
+							String tagNamesCsv = tagNamesBuilder.toString();
+							complaint.setL_tag_name(tagNamesCsv);
+
+						}
 					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
@@ -572,11 +605,15 @@ public class ComplaintService {
 
 			// For HOD user
 			if ("HOD".equals(roleName)) {
-				l_Query = "SELECT c.*, " + "d.department_name AS l_department_name, " + "cb.name AS l_created_by, "
-						+ "at.name AS l_assigned_to " + "FROM complaint_trn c "
+				l_Query = "SELECT c.*, " + "d.department_name AS l_department_name, " 
+						+ "cb.name AS l_created_by, "
+						+ "at.name AS l_assigned_to, " 
+						+ "cat.category_name AS l_category_name "
+						+ "FROM complaint_trn c "
 						+ "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
 						+ "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
 						+ "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+						+ "LEFT JOIN category_mst cat ON c.category_id = cat.category_id "
 						+ "WHERE c.is_active = 'YES' " + "AND c.org_id = ? AND c.opr_id = ? AND c.department_id = ? "
 						+ "ORDER BY created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE,
@@ -615,9 +652,37 @@ public class ComplaintService {
 						// if anonymous flag is true then set created by blank
 						// Also make sure created by is not set "" when HOD himself creates anonymous
 						// complaint
-						if ("YES".equals(complaint.getIs_anonymous()) && !request.getId().equals(complaint.getCreated_by())) {
+						if ("YES".equals(complaint.getIs_anonymous())
+								&& !request.getId().equals(complaint.getCreated_by())) {
 							complaint.setCreated_by("");
 							complaint.setModified_by("");
+						}
+						
+						String[] tagIdArray = complaint.getTag_id().split(",\\s*");
+						if (tagIdArray != null || complaint.getTag_id().isEmpty()) {
+							String tagId = "";
+							for (int i = 0; i < tagIdArray.length; i++) {
+								if (i > 0) {
+									tagId += ",";
+								}
+								tagId += "'" + tagIdArray[i] + "'"; 
+							}
+
+							String sql = "SELECT tag_name FROM tags_mst WHERE tag_id IN (" + tagId + ")";
+
+							l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+							ResultSet l_ResultSet2 = l_PreparedStatement.executeQuery();
+							StringBuilder tagNamesBuilder = new StringBuilder();
+							while (l_ResultSet2.next()) {
+							    if (tagNamesBuilder.length() > 0) {
+							        tagNamesBuilder.append(",");
+							    }
+							    tagNamesBuilder.append(l_ResultSet2.getString("tag_name"));
+							}
+
+							String tagNamesCsv = tagNamesBuilder.toString();
+							complaint.setL_tag_name(tagNamesCsv);
+
 						}
 
 					}
@@ -627,11 +692,15 @@ public class ComplaintService {
 
 			// For Client
 			if ("CLIENT".equals(roleName)) {
-				l_Query = "SELECT c.*, " + "d.department_name AS l_department_name, " + "cb.name AS l_created_by, "
-						+ "at.name AS l_assigned_to " + "FROM complaint_trn c "
+				l_Query = "SELECT c.*, " + "d.department_name AS l_department_name, " 
+						+ "cb.name AS l_created_by, "
+						+ "at.name AS l_assigned_to, " 
+						+ "cat.category_name AS l_category_name "
+						+ "FROM complaint_trn c "
 						+ "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
 						+ "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
 						+ "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+						+ "LEFT JOIN category_mst cat ON c.category_id = cat.category_id "
 						+ "WHERE c.is_active = 'YES' " + "AND c.org_id = ? AND c.opr_id = ? AND c.created_by = ? "
 						+ "ORDER BY created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE,
@@ -667,7 +736,32 @@ public class ComplaintService {
 						}
 						complaint.setHas_feedback(count > 0);
 
-						// Add this setter to your Complaint model if not already present
+						String[] tagIdArray = complaint.getTag_id().split(",\\s*");
+						if (tagIdArray != null || complaint.getTag_id().isEmpty()) {
+							String tagId = "";
+							for (int i = 0; i < tagIdArray.length; i++) {
+								if (i > 0) {
+									tagId += ",";
+								}
+								tagId += "'" + tagIdArray[i] + "'"; 
+							}
+
+							String sql = "SELECT tag_name FROM tags_mst WHERE tag_id IN (" + tagId + ")";
+
+							l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+							ResultSet l_ResultSet2 = l_PreparedStatement.executeQuery();
+							StringBuilder tagNamesBuilder = new StringBuilder();
+							while (l_ResultSet2.next()) {
+							    if (tagNamesBuilder.length() > 0) {
+							        tagNamesBuilder.append(",");
+							    }
+							    tagNamesBuilder.append(l_ResultSet2.getString("tag_name"));
+							}
+
+							String tagNamesCsv = tagNamesBuilder.toString();
+							complaint.setL_tag_name(tagNamesCsv);
+
+						}
 					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
@@ -675,11 +769,15 @@ public class ComplaintService {
 
 			// For employee
 			if ("EMPLOYEE".equals(roleName)) {
-				l_Query = "SELECT c.*, " + "d.department_name AS l_department_name, " + "cb.name AS l_created_by, "
-						+ "at.name AS l_assigned_to " + "FROM complaint_trn c "
+				l_Query = "SELECT c.*, " + "d.department_name AS l_department_name, " 
+						+ "cb.name AS l_created_by, "
+						+ "at.name AS l_assigned_to, " 
+						+ "cat.category_name AS l_category_name "
+						+ "FROM complaint_trn c "
 						+ "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
 						+ "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
 						+ "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
+						+ "LEFT JOIN category_mst cat ON c.category_id = cat.category_id "
 						+ "WHERE c.is_active = 'YES' " + "AND c.org_id = ? AND c.opr_id = ? "
 						+ "AND (c.created_by = ? OR c.assigned_to = ?) " + "ORDER BY created_on DESC";
 				l_PreparedStatement = l_DBConnection.prepareStatement(l_Query, ResultSet.TYPE_SCROLL_INSENSITIVE,
@@ -717,11 +815,41 @@ public class ComplaintService {
 						complaint.setHas_feedback(count > 0);
 
 						// if anonymous flag is true then set created by blank
-						// Also make sure created by is not set "" when employee himself creates anonymous complaint
-						if ("YES".equals(complaint.getIs_anonymous()) && !request.getId().equals(complaint.getCreated_by())) {
+						// Also make sure created by is not set "" when employee himself creates
+						// anonymous complaint
+						if ("YES".equals(complaint.getIs_anonymous())
+								&& !request.getId().equals(complaint.getCreated_by())) {
 							complaint.setCreated_by("");
 							complaint.setModified_by("");
 						}
+
+						String[] tagIdArray = complaint.getTag_id().split(",\\s*");
+						if (tagIdArray != null || complaint.getTag_id().isEmpty()) {
+							String tagId = "";
+							for (int i = 0; i < tagIdArray.length; i++) {
+								if (i > 0) {
+									tagId += ",";
+								}
+								tagId += "'" + tagIdArray[i] + "'"; 
+							}
+
+							String sql = "SELECT tag_name FROM tags_mst WHERE tag_id IN (" + tagId + ")";
+
+							l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+							ResultSet l_ResultSet2 = l_PreparedStatement.executeQuery();
+							StringBuilder tagNamesBuilder = new StringBuilder();
+							while (l_ResultSet2.next()) {
+							    if (tagNamesBuilder.length() > 0) {
+							        tagNamesBuilder.append(",");
+							    }
+							    tagNamesBuilder.append(l_ResultSet2.getString("tag_name"));
+							}
+
+							String tagNamesCsv = tagNamesBuilder.toString();
+							complaint.setL_tag_name(tagNamesCsv);
+
+						}
+						
 					}
 					return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 				}
@@ -754,13 +882,11 @@ public class ComplaintService {
 			l_DBConnection = l_DataSource.getConnection();
 
 			String sql = "SELECT c.*, " + "d.department_name AS l_department_name, " + "cb.name AS l_created_by, "
-					+ "at.name AS l_assigned_to, " + "cat.category_name AS l_category_name, "
-					+ "t.tag_name AS l_tag_name " + "FROM complaint_trn c "
+					+ "at.name AS l_assigned_to, " + "cat.category_name AS l_category_name " + "FROM complaint_trn c "
 					+ "LEFT JOIN departments_mst d ON c.department_id = d.department_id "
 					+ "LEFT JOIN account_user_mst cb ON c.created_by = cb.account_id "
 					+ "LEFT JOIN account_user_mst at ON c.assigned_to = at.account_id "
 					+ "LEFT JOIN category_mst cat ON c.category_id = cat.category_id "
-					+ "LEFT JOIN tags_mst t ON c.tag_id = t.tag_id "
 					+ "WHERE c.complaint_id = ? AND c.opr_id = ? AND c.org_id = ? " + "AND c.is_active = 'YES'";
 
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(sql,
@@ -797,7 +923,33 @@ public class ComplaintService {
 				complaint.setCategory_id(l_ResultSet.getString("category_id"));
 				complaint.setL_category_name(l_ResultSet.getString("l_category_name"));
 				complaint.setTag_id(l_ResultSet.getString("tag_id"));
-				complaint.setL_tag_name(l_ResultSet.getString("l_tag_name"));
+
+				String[] tagIdArray = complaint.getTag_id().split(",\\s*");
+				if (tagIdArray != null || complaint.getTag_id().isEmpty()) {
+					String tagId = "";
+					for (int i = 0; i < tagIdArray.length; i++) {
+						if (i > 0) {
+							tagId += ",";
+						}
+						tagId += "'" + tagIdArray[i] + "'"; 
+					}
+
+					sql = "SELECT tag_name FROM tags_mst WHERE tag_id IN (" + tagId + ")";
+
+					l_PreparedStatement = l_DBConnection.prepareStatement(sql);
+					ResultSet l_ResultSet2 = l_PreparedStatement.executeQuery();
+					StringBuilder tagNamesBuilder = new StringBuilder();
+					while (l_ResultSet2.next()) {
+					    if (tagNamesBuilder.length() > 0) {
+					        tagNamesBuilder.append(",");
+					    }
+					    tagNamesBuilder.append(l_ResultSet2.getString("tag_name"));
+					}
+
+					String tagNamesCsv = tagNamesBuilder.toString();
+					complaint.setL_tag_name(tagNamesCsv);
+
+				}
 
 				// Due date may be null, so check before mapping
 				Timestamp dueDate = l_ResultSet.getTimestamp("due_date");
@@ -810,8 +962,7 @@ public class ComplaintService {
 
 			if (complaint == null) {
 				return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Complaint not found");
-			} 
-			else {
+			} else {
 				sql = "SELECT COUNT(*) as count " + "FROM feedback_trn f "
 						+ "WHERE f.is_active = 'YES' AND f.complaint_id = ?";
 
@@ -826,32 +977,32 @@ public class ComplaintService {
 					count = l_ResultSet1.getInt("count");
 				}
 				complaint.setHas_feedback(count > 0);
-				
-				//get account_id from email 
+
+				// get account_id from email
 				sql = "SELECT account_id from account_user_mst WHERE email = ? ";
-				
+
 				l_PreparedStatement = l_DBConnection.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
 						ResultSet.CONCUR_READ_ONLY);
-				
-				l_PreparedStatement.setString(1,request.getEmail());
-				
+
+				l_PreparedStatement.setString(1, request.getEmail());
+
 				l_ResultSet = l_PreparedStatement.executeQuery();
-				
+
 				String accountId = null;
-				
-				if(l_ResultSet.next()) {
+
+				if (l_ResultSet.next()) {
 					accountId = l_ResultSet.getString("account_id");
-					if(accountId == null || accountId.isBlank()) {
+					if (accountId == null || accountId.isBlank()) {
 						return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "User not found");
 					}
 				}
-				
+
 				// anonymous logic
 				if ("YES".equals(complaint.getIs_anonymous()) && !accountId.equals(complaint.getCreated_by())) {
 					complaint.setCreated_by("");
 					complaint.setModified_by("");
 				}
-				
+
 				return ResponseEntity.status(HttpStatus.OK).body(complaint);
 			}
 		} catch (Exception e) {

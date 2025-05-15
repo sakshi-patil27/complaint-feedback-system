@@ -24,6 +24,7 @@ import com.complaintandfeedback.Model.AttachmentTrn;
 import com.complaintandfeedback.Model.Complaint;
 import com.complaintandfeedback.Model.ComplaintStatusHistory;
 import com.complaintandfeedback.Model.ResponseMessage;
+import com.complaintandfeedback.nlp.SentimentAnalysis;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -52,6 +53,9 @@ public class ComplaintService {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+	
+	@Autowired
+	private SentimentAnalysis sentimentAnalysis;
 
 	// private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd
 	// HH:mm:ss");
@@ -83,7 +87,26 @@ public class ComplaintService {
 			l_PreparedStatement.setLong(3, complaint.getOpr_id());
 			l_PreparedStatement.setString(4, complaint.getSubject());
 			l_PreparedStatement.setString(5, complaint.getDescription());
-			l_PreparedStatement.setString(6, complaint.getPriority());
+			
+			// if priority is blank or null then get priority using Sentiment Analysis
+			String priority = null;
+			if("very negative".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))
+				|| "Negative".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))) {
+				priority = "HIGH";
+			}
+			else if ("Neutral".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))) {
+				priority = "MEDIUM";
+			}
+			else if ("Positive".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))
+					|| "Very positive".equals(sentimentAnalysis.getSentiment(complaint.getSubject()))) {
+				priority = "LOW";
+			}			
+			
+			String text = (complaint.getPriority() == null || complaint.getPriority().isBlank())
+				    ? priority : complaint.getPriority();
+
+			l_PreparedStatement.setString(6, text);//set priority
+			
 			l_PreparedStatement.setString(7, complaint.getStatus());
 			l_PreparedStatement.setString(8, complaint.getDepartment_id());
 			l_PreparedStatement.setString(9, complaint.getCreated_by());

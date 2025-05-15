@@ -347,6 +347,63 @@ public class DashboardAdminHODService {
 	        return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, "Error while fetching nearing due date complaints.");
 	    }
 	}
+	public ResponseEntity<Object> getUserLoadByDepartment(CommonRequestModel request) {
+	    try (Connection connection = l_DataSource.getConnection()) {
+	        String query = """
+	            SELECT 
+	                a.name,
+	                c.assigned_to,
+	                COUNT(*) AS current_load,
+	                ROUND(
+	                    COUNT(*) * 100.0 / (
+	                        SELECT COUNT(*) 
+	                        FROM complaint_trn 
+	                        WHERE department_id = ? 
+	                          AND org_id = ? 
+	                          AND opr_id = ? 
+	                          AND status IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'Reopen', 'Escalated')
+	                    ), 
+	                    2
+	                ) AS load_percentage
+	            FROM complaint_trn c
+	            JOIN account_user_mst a ON c.assigned_to = a.account_id
+	            WHERE c.department_id = ?
+	              AND c.org_id = ?
+	              AND c.opr_id = ?
+	              AND c.status IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'Reopen', 'Escalated')
+	            GROUP BY c.assigned_to, a.name
+	            ORDER BY load_percentage ASC
+	        """;
+
+	        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+	            stmt.setString(1, request.getId());           
+	            stmt.setLong(2, request.getOrg_id());        
+	            stmt.setLong(3, request.getOpr_id());        
+
+	            stmt.setString(4, request.getId());           
+	            stmt.setLong(5, request.getOrg_id());         
+	            stmt.setLong(6, request.getOpr_id());         
+
+	            List<Map<String, Object>> teamLoadList = new ArrayList<>();
+
+	            try (ResultSet rs = stmt.executeQuery()) {
+	                while (rs.next()) {
+	                    Map<String, Object> map = new HashMap<>();
+	                    map.put("fullName", rs.getString("name"));
+	                    map.put("account_id", rs.getString("assigned_to"));
+	                    map.put("currentLoad", rs.getInt("current_load"));
+	                    map.put("loadPercentage", rs.getDouble("load_percentage"));
+	                    teamLoadList.add(map);
+	                }
+	            }
+
+	            return ResponseEntity.ok(teamLoadList);
+	        }
+	    } catch (Exception e) {
+	        return commonUtils.responseErrorHeader(
+	            e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, "Error while fetching team load with percentage.");
+	    }
+	}
 
 	}
 

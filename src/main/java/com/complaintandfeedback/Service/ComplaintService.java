@@ -1,6 +1,5 @@
 package com.complaintandfeedback.Service;
-
-import java.net.http.HttpHeaders;
+import org.springframework.http.HttpHeaders;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -35,8 +34,7 @@ import com.complaintandfeedback.nlp.SentimentAnalysis;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.swagger.v3.oas.models.media.MediaType;
+import org.springframework.http.MediaType;
 import jakarta.validation.Valid;
 
 @Service

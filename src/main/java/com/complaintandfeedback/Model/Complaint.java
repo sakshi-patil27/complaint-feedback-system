@@ -59,6 +59,8 @@ public class Complaint {
     
     private String tag_id;
     
+    private String location;
+    
     private String l_previous_status;
     
     private String l_department_name;

@@ -85,8 +85,8 @@ public class ComplaintService {
 
 			String l_Query = "INSERT INTO complaint_trn (complaint_id, org_id, opr_id, subject, "
 					+ "description, priority, status, department_id, created_by, assigned_to, created_on, "
-					+ "modified_on, modified_by, due_date, is_active, is_anonymous, category_id, tag_id) "
-					+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+					+ "modified_on, modified_by, due_date, is_active, is_anonymous, category_id, tag_id, location) "
+					+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
 
@@ -171,6 +171,7 @@ public class ComplaintService {
 			
 			l_PreparedStatement.setString(17, complaint.getCategory_id());
 			l_PreparedStatement.setString(18, complaint.getTag_id());
+			l_PreparedStatement.setString(19, complaint.getLocation());
 
 //	        if (complaint.getDue_date() != null) {
 //	            l_PreparedStatement.setString(13, complaint.getDue_date().toLocalDateTime().format(formatter));
@@ -301,7 +302,8 @@ public class ComplaintService {
 
 			String sql = "UPDATE complaint_trn SET subject = ?, description = ?, priority = ?, status = ?, "
 					+ "department_id = ?, assigned_to = ?, modified_by = ?, modified_on = ?, due_date = ?, "
-					+ "is_active = ?, opr_id = ?, org_id = ?, category_id = ?, tag_id = ? " + "WHERE complaint_id = ?";
+					+ "is_active = ?, opr_id = ?, org_id = ?, category_id = ?, tag_id = ?, location = ?" 
+					+ "WHERE complaint_id = ?";
 
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(sql);
 
@@ -319,7 +321,8 @@ public class ComplaintService {
 			l_PreparedStatement.setLong(12, complaint.getOrg_id());
 			l_PreparedStatement.setString(13, complaint.getCategory_id());
 			l_PreparedStatement.setString(14, complaint.getTag_id());
-			l_PreparedStatement.setString(15, complaint.getComplaint_id());
+			l_PreparedStatement.setString(15, complaint.getLocation());
+			l_PreparedStatement.setString(16, complaint.getComplaint_id());
 
 			int rowsAffected = l_PreparedStatement.executeUpdate();
 
@@ -981,6 +984,7 @@ public class ComplaintService {
 				complaint.setCategory_id(l_ResultSet.getString("category_id"));
 				complaint.setL_category_name(l_ResultSet.getString("l_category_name"));
 				complaint.setTag_id(l_ResultSet.getString("tag_id"));
+				complaint.setLocation(l_ResultSet.getString("location"));
 
 				String[] tagIdArray = complaint.getTag_id().split(",\\s*");
 				if (tagIdArray != null || complaint.getTag_id().isEmpty()) {

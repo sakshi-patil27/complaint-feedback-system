@@ -53,7 +53,7 @@ public class SentimentAnalysis {
         }
     }
 	
-	 private static String mapScoreToSentiment(double score) {
+	private static String mapScoreToSentiment(double score) {
         if (score < 0.5) return "Very negative";
         else if (score < 1.5) return "Negative";
         else if (score < 2.5) return "Neutral";

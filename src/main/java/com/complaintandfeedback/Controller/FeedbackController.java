@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
-import com.complaintandfeedback.Model.Feedback;
+import com.complaintandfeedback.DTO.FeedbackDto;
 import com.complaintandfeedback.Service.FeedbackService;
 
 @RestController
@@ -21,12 +21,12 @@ public class FeedbackController {
 	private FeedbackService feedbackService;
 	
 	@PostMapping("/saveFeedback")
-	public ResponseEntity<Object> saveFeedback(@RequestBody Feedback feedback) throws SQLException{
-		return feedbackService.saveFeedback(feedback);
+	public ResponseEntity<Object> saveFeedback(@RequestBody FeedbackDto feedbackDto) throws SQLException{
+		return feedbackService.saveFeedback(feedbackDto);
 	}
 	
 	@PostMapping("/getFeedbackByComplaint")
-	public ResponseEntity<Object> getFeedbackByComplaint(@RequestBody CommonRequestModel request){
+	public ResponseEntity<Object> getFeedbackByComplaint(@RequestBody CommonRequestModel request) throws SQLException{
 		return feedbackService.getFeedbackByComplaint(request);
 	}
 	

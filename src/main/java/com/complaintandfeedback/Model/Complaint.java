@@ -26,7 +26,7 @@ public class Complaint {
     @Size(max = 200, min = 1, message = "Subject field should be between 1 to 200 characters")
     private String subject;
     
-    @NotBlank(message = "Subject field cannot be empty")	
+    @NotBlank(message = "Description field cannot be empty")	
     @Size(max = 500, min = 1, message = "Subject field should be between 1 to 500 characters")
     @Column(columnDefinition = "TEXT")
     private String description;

@@ -96,7 +96,7 @@ public class ComplaintService {
 			l_PreparedStatement.setLong(3, complaint.getOpr_id());
 			l_PreparedStatement.setString(4, complaint.getSubject());
 			l_PreparedStatement.setString(5, complaint.getDescription());	
-//
+
 			String text = (complaint.getPriority() == null || complaint.getPriority().isBlank()) 
 					? priorityBySentiment(complaint)
 					: complaint.getPriority();

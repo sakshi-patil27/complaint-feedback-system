@@ -38,4 +38,12 @@ public class DashboardUserController {
     public ResponseEntity<Object> getComplaintsByPriorityByAssign(@RequestBody CommonRequestModel request) {
         return dashboardUserService.getComplaintsByPriorityByAssign(request);
     }
+	@PostMapping("/user/complaintList")
+    public ResponseEntity<Object> getComplaints(@RequestBody CommonRequestModel request) {
+        return dashboardUserService.getComplaints(request);
+    }
+	@PostMapping("/user/assign/complaintList")
+    public ResponseEntity<Object> getComplaintsByAssign(@RequestBody CommonRequestModel request) {
+        return dashboardUserService.getComplaintsByAssign(request);
+    }
 }

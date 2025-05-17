@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.json.JsonObject;
 import javax.sql.DataSource;
 
+import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.complaintandfeedback.DTO.CommonRequestModel;
+import com.complaintandfeedback.Model.Complaint;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class DashboardUserService {
@@ -354,5 +358,59 @@ public class DashboardUserService {
 			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
 		}
 	}
+	public ResponseEntity<Object> getComplaints(CommonRequestModel request) {
+		try (Connection l_DBConnection = l_DataSource.getConnection()) {
+			String l_Query = "SELECT * " 
+		            + "FROM complaint_trn " 
+					+ "WHERE is_active = 'YES' "
+					+ "AND org_id = ? AND opr_id = ? " 
+					+ "AND created_by = ? "
+					+ "ORDER BY created_on";
+			PreparedStatement l_PreparedStatement= l_DBConnection.prepareStatement(l_Query);
+			l_PreparedStatement.setLong(1, request.getOrg_id());
+			l_PreparedStatement.setLong(2, request.getOpr_id());
+			l_PreparedStatement.setString(3, request.getId());
+			ResultSet l_ResultSet=l_PreparedStatement.executeQuery();
+			JSONArray l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
+			if (l_ModuleArr.isEmpty()) {
+				return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "NO DATA FOUND");
+			} else {
+				TypeReference<List<Complaint>> typeReference = new TypeReference<List<Complaint>>() {
+				};
+				List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(), typeReference);
+				return ResponseEntity.ok(l_data_List);
+			}
+		}catch (Exception e) {
+			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+		}
+	}
+	public ResponseEntity<Object> getComplaintsByAssign(CommonRequestModel request) {
+		try (Connection l_DBConnection = l_DataSource.getConnection()) {
+			String l_Query = "SELECT * " 
+		            + "FROM complaint_trn " 
+					+ "WHERE is_active = 'YES' "
+					+ "AND org_id = ? AND opr_id = ? " 
+					+ "AND assigned_to = ? "
+					+ "ORDER BY created_on ";
+			PreparedStatement l_PreparedStatement= l_DBConnection.prepareStatement(l_Query);
+			l_PreparedStatement.setLong(1, request.getOrg_id());
+			l_PreparedStatement.setLong(2, request.getOpr_id());
+			l_PreparedStatement.setString(3, request.getId());
+			ResultSet l_ResultSet=l_PreparedStatement.executeQuery();
+			JSONArray l_ModuleArr = CommonUtils.convertToJsonArray(l_ResultSet, 0);
+			if (l_ModuleArr.isEmpty()) {
+				return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "NO DATA FOUND");
+			} else {
+				TypeReference<List<Complaint>> typeReference = new TypeReference<List<Complaint>>() {
+				};
+				List<Complaint> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(), typeReference);
+				return ResponseEntity.ok(l_data_List);
+			}
+		}catch (Exception e) {
+			return commonUtils.responseErrorHeader(e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, null);
+		}
+	}
+
+
 
 }

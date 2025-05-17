@@ -30,4 +30,12 @@ public class DashboardUserController {
     public ResponseEntity<Object> getComplaintsByMonthsByAssign(@RequestBody CommonRequestModel request) {
         return dashboardUserService.getComplaintsByMonthsByAssign(request);
     }
+	@PostMapping("/user/by-priority")
+    public ResponseEntity<Object> getComplaintsByPriority(@RequestBody CommonRequestModel request) {
+        return dashboardUserService.getComplaintsByPriority(request);
+    }
+	@PostMapping("/user/assign/by-priority")
+    public ResponseEntity<Object> getComplaintsByPriorityByAssign(@RequestBody CommonRequestModel request) {
+        return dashboardUserService.getComplaintsByPriorityByAssign(request);
+    }
 }

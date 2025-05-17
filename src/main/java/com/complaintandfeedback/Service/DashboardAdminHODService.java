@@ -6,8 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -404,6 +406,77 @@ public class DashboardAdminHODService {
 	            e, "DAO", HttpStatus.INTERNAL_SERVER_ERROR, "Error while fetching team load with percentage.");
 	    }
 	}
+	
+	public ResponseEntity<Object> getComplaintSummaryByCategoryAndTags(CommonRequestModel request) {
+	    try (Connection conn = l_DataSource.getConnection()) {
+
+	        // 1. Get complaints count grouped by department and subject (tag)
+	        String sql = "SELECT d.department_id, d.department_name, " +
+	                     "       ct.subject AS tag_name, COUNT(*) AS tag_count " +
+	                     "FROM complaint_trn ct " +
+	                     "JOIN departments_mst d ON ct.department_id = d.department_id " +
+	                     "WHERE ct.is_active = 'YES' AND ct.opr_id = ? AND ct.org_id = ? ";
+
+	        if (request.getId() != null) {
+	            sql += "AND ct.department_id = ? ";
+	        }
+
+	        sql += "GROUP BY d.department_id, ct.subject";
+
+	        PreparedStatement stmt = conn.prepareStatement(sql);
+	        stmt.setLong(1, request.getOpr_id());
+	        stmt.setLong(2, request.getOrg_id());
+	        if (request.getId() != null) {
+	            stmt.setString(3, request.getId());
+	        }
+
+	        ResultSet rs = stmt.executeQuery();
+
+	        // 2. Process results into nested map
+	        Map<String, Map<String, Object>> departmentMap = new LinkedHashMap<>();
+
+	        while (rs.next()) {
+	            String deptId = rs.getString("department_id");
+	            String deptName = rs.getString("department_name");
+	            String tagName = rs.getString("tag_name");
+	            int tagCount = rs.getInt("tag_count");
+
+	            // Create new department if not exists
+	            departmentMap.putIfAbsent(deptId, new HashMap<>() {{
+	                put("category_id", deptId);
+	                put("category_name", deptName);
+	                put("count", 0);
+	                put("tags", new ArrayList<Map<String, Object>>());
+	            }});
+
+	            Map<String, Object> dept = departmentMap.get(deptId);
+	            List<Map<String, Object>> tags = (List<Map<String, Object>>) dept.get("tags");
+
+	            // Add tag
+	            Map<String, Object> tagObj = new HashMap<>();
+	            tagObj.put("tag_id", UUID.randomUUID().toString());
+	            tagObj.put("tag_name", tagName);
+	            tagObj.put("count", tagCount);
+	            tags.add(tagObj);
+
+	            // Update total count
+	            int currentCount = (int) dept.get("count");
+	            dept.put("count", currentCount + tagCount);
+	        }
+
+	        // 3. Final result list
+	        List<Map<String, Object>> resultList = new ArrayList<>(departmentMap.values());
+	        return ResponseEntity.ok(resultList);
+
+	    } catch (SQLException e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(Map.of("error", "SQL error", "details", e.getMessage()));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(Map.of("error", "Unexpected error", "details", e.getMessage()));
+	    }
+	}
+
 
 	}
 

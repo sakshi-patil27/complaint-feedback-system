@@ -16,7 +16,7 @@ public class DashboardUserController {
 	private DashboardUserService dashboardUserService;
 	@PostMapping("/user/complaint-status-summary")
 	public ResponseEntity<Object> getComplaintStatusSummary(@RequestBody CommonRequestModel request) {
-	    return dashboardUserService.getComplaintCountByUser(request);
+	    return dashboardUserService.getComplaintSummaryByUser(request);
 	}
 	@PostMapping("/user/by-months")
     public ResponseEntity<Object> getComplaintsByMonths(@RequestBody CommonRequestModel request) {
@@ -24,6 +24,10 @@ public class DashboardUserController {
     }
 	@PostMapping("/user/assign/complaint-status-summary")
 	public ResponseEntity<Object> getComplaintStatusSummaryByAssign(@RequestBody CommonRequestModel request) {
-	    return dashboardUserService.getComplaintCountByAssignee(request);
+	    return dashboardUserService.getComplaintSummaryByAssignee(request);
 	}
+	@PostMapping("/user/assign/by-months")
+    public ResponseEntity<Object> getComplaintsByMonthsByAssign(@RequestBody CommonRequestModel request) {
+        return dashboardUserService.getComplaintsByMonthsByAssign(request);
+    }
 }

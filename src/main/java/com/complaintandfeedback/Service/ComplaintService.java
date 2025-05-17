@@ -1,5 +1,4 @@
 package com.complaintandfeedback.Service;
-import org.springframework.http.HttpHeaders;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,7 +17,9 @@ import javax.sql.DataSource;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -31,10 +32,11 @@ import com.complaintandfeedback.Model.Complaint;
 import com.complaintandfeedback.Model.ComplaintStatusHistory;
 import com.complaintandfeedback.Model.ResponseMessage;
 import com.complaintandfeedback.nlp.SentimentAnalysis;
+import com.complaintandfeedback.webSocketConfig.NotificationService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.http.MediaType;
+
 import jakarta.validation.Valid;
 
 @Service
@@ -63,6 +65,9 @@ public class ComplaintService {
 
 	@Autowired
 	private SentimentAnalysis sentimentAnalysis;
+	
+	@Autowired
+	private NotificationService notificationService;
 	
 	RestTemplate restTemplate = new RestTemplate();
 
@@ -378,6 +383,14 @@ public class ComplaintService {
 
 				response = emailService.notifyComplaintUpdate(accountUser.getEmail(), assignedTo.getEmail(),
 						complaint.getL_previous_status(), complaint.getStatus(), complaintDetails);
+				
+				//send notification to the assigned user 
+				if ("ASSIGNED".equals(complaint.getStatus())){
+				notificationService.sendNotification(
+						assignedTo.getAccount_id(),
+					    "A complaint has been assigned to you: " + complaint.getSubject() 
+					);
+				}
 
 //		        if(!response.getStatusCode().equals(HttpStatus.OK)) {
 //		        	l_DBConnection.rollback();
@@ -1020,6 +1033,7 @@ public class ComplaintService {
 				complaint.setModified_by(l_ResultSet.getString("modified_by"));
 				complaint.setIs_active(l_ResultSet.getString("is_active"));
 				complaint.setIs_anonymous(l_ResultSet.getString("is_anonymous"));
+				complaint.setLocation(l_ResultSet.getString("location"));
 			}
 
 			if (complaint == null) {
@@ -1098,24 +1112,86 @@ public class ComplaintService {
 		return priority;
 	}
 	
+//	public Map<String, Object> getAllDepartmentWithMappedCategory(CommonRequestModel request) {
+//	    Map<String, Object> response = new HashMap<>();
+//	    Map<String, Map<String, Object>> labelMapping = new HashMap<>();
+//
+//	    try (Connection conn = l_DataSource.getConnection()) {
+//	        StringBuilder query = new StringBuilder(
+//	            "SELECT d.department_id, d.department_name, c.category_id, c.category_name " +
+//	            "FROM departments_mst d " +
+//	            "LEFT JOIN category_mst c ON d.department_id = c.department_id " +
+//	            "WHERE d.is_active = 'YES' AND c.is_active = 'YES' " +
+//	            "AND d.org_id = ? AND d.opr_id = ?"
+//	        );
+//
+//	        if (request.getId() != null && !request.getId().trim().isEmpty()) {
+//	            query.append(" AND d.department_id = ?");
+//	        }
+//
+//	        PreparedStatement ps = conn.prepareStatement(query.toString());
+//	        ps.setLong(1, request.getOrg_id());
+//	        ps.setLong(2, request.getOpr_id());
+//
+//	        if (request.getId() != null && !request.getId().trim().isEmpty()) {
+//	            ps.setString(3, request.getId());
+//	        }
+//
+//	        ResultSet rs = ps.executeQuery();
+//
+//	        while (rs.next()) {
+//	            String deptName = rs.getString("department_name");
+//	            String deptId = rs.getString("department_id");
+//	            String catId = rs.getString("category_id");
+//	            String catName = rs.getString("category_name");
+//
+//	            if (!labelMapping.containsKey(deptName)) {
+//	                Map<String, Object> deptInfo = new HashMap<>();
+//	                deptInfo.put("id", deptId);
+//	                deptInfo.put("categories", new ArrayList<Map<String, Object>>());
+//	                labelMapping.put(deptName, deptInfo);
+//	            }
+//
+//	            Map<String, Object> deptInfo = labelMapping.get(deptName);
+//	            List<Map<String, Object>> categories = (List<Map<String, Object>>) deptInfo.get("categories");
+//
+//	            Map<String, Object> category = new HashMap<>();
+//	            category.put("id", catId);
+//	            category.put("name", catName);
+//	            categories.add(category);
+//	        }
+//
+//	        response.put("label_mapping", labelMapping);
+//	        return response;
+//
+//	    } catch (SQLException e) {
+//	        e.printStackTrace();
+//	        response.put("error", "Database error occurred: " + e.getMessage());
+//	        return response;
+//	    }
+//	}
+//	
 	public Map<String, Object> getAllDepartmentWithMappedCategory(CommonRequestModel request) {
 	    Map<String, Object> response = new HashMap<>();
 	    Map<String, Map<String, Object>> labelMapping = new HashMap<>();
 
-	    try (Connection conn = l_DataSource.getConnection()) {
-	        StringBuilder query = new StringBuilder(
-	            "SELECT d.department_id, d.department_name, c.category_id, c.category_name " +
-	            "FROM departments_mst d " +
-	            "LEFT JOIN category_mst c ON d.department_id = c.department_id " +
-	            "WHERE d.is_active = 'YES' AND c.is_active = 'YES' " +
-	            "AND d.org_id = ? AND d.opr_id = ?"
-	        );
+	    String query = "SELECT d.department_id, d.department_name, " +
+	                   "c.category_id, c.category_name, " +
+	                   "t.tag_id, t.tag_name " +
+	                   "FROM departments_mst d " +
+	                   "LEFT JOIN category_mst c ON d.department_id = c.department_id " +
+	                   "LEFT JOIN tags_mst t ON c.category_id = t.category_id " +
+	                   "WHERE d.is_active = 'YES' AND c.is_active = 'YES' " +
+	                   "AND (t.is_active = 'YES' OR t.tag_id IS NULL) " +
+	                   "AND d.org_id = ? AND d.opr_id = ?";
 
-	        if (request.getId() != null && !request.getId().trim().isEmpty()) {
-	            query.append(" AND d.department_id = ?");
-	        }
+	    if (request.getId() != null && !request.getId().trim().isEmpty()) {
+	        query += " AND d.department_id = ?";
+	    }
 
-	        PreparedStatement ps = conn.prepareStatement(query.toString());
+	    try (Connection conn = l_DataSource.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(query)) {
+
 	        ps.setLong(1, request.getOrg_id());
 	        ps.setLong(2, request.getOpr_id());
 
@@ -1126,35 +1202,57 @@ public class ComplaintService {
 	        ResultSet rs = ps.executeQuery();
 
 	        while (rs.next()) {
-	            String deptName = rs.getString("department_name");
 	            String deptId = rs.getString("department_id");
+	            String deptName = rs.getString("department_name");
 	            String catId = rs.getString("category_id");
 	            String catName = rs.getString("category_name");
+	            String tagId = rs.getString("tag_id");
+	            String tagName = rs.getString("tag_name");
 
-	            if (!labelMapping.containsKey(deptName)) {
-	                Map<String, Object> deptInfo = new HashMap<>();
-	                deptInfo.put("id", deptId);
-	                deptInfo.put("categories", new ArrayList<Map<String, Object>>());
-	                labelMapping.put(deptName, deptInfo);
-	            }
+	            // Get or create department map
+	            Map<String, Object> deptInfo = labelMapping.computeIfAbsent(deptName, k -> {
+	                Map<String, Object> newDept = new HashMap<>();
+	                newDept.put("id", deptId);
+	                newDept.put("categories", new ArrayList<Map<String, Object>>());
+	                return newDept;
+	            });
 
-	            Map<String, Object> deptInfo = labelMapping.get(deptName);
 	            List<Map<String, Object>> categories = (List<Map<String, Object>>) deptInfo.get("categories");
 
-	            Map<String, Object> category = new HashMap<>();
-	            category.put("id", catId);
-	            category.put("name", catName);
-	            categories.add(category);
+	            // Check if category already exists
+	            Map<String, Object> category = categories.stream()
+	                .filter(cat -> cat.get("id").equals(catId))
+	                .findFirst()
+	                .orElse(null);
+
+	            if (category == null) {
+	                category = new HashMap<>();
+	                category.put("id", catId);
+	                category.put("name", catName);
+	                category.put("tags", new ArrayList<Map<String, Object>>());
+	                categories.add(category);
+	            }
+
+	            // Add tag if present
+	            if (tagId != null) {
+	                List<Map<String, Object>> tags = (List<Map<String, Object>>) category.get("tags");
+	                boolean tagAlreadyExists = tags.stream().anyMatch(tag -> tag.get("id").equals(tagId));
+	                if (!tagAlreadyExists) {
+	                    Map<String, Object> tag = new HashMap<>();
+	                    tag.put("id", tagId);
+	                    tag.put("name", tagName);
+	                    tags.add(tag);
+	                }
+	            }
 	        }
 
 	        response.put("label_mapping", labelMapping);
-	        return response;
 
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	        response.put("error", "Database error occurred: " + e.getMessage());
-	        return response;
 	    }
-	}
 
+	    return response;
+	}
 }

@@ -42,5 +42,9 @@ public class DashboardAdminHODController {
 	public ResponseEntity<Object> getTeamLoad(@RequestBody CommonRequestModel request) {
 	    return dashboardService.getUserLoadByDepartment(request);
 	}
+	@PostMapping("/hod/getComplaintSummaryByCategoryAndTags")
+	public ResponseEntity<Object> getComplaintSummaryByCategoryAndTags(@RequestBody CommonRequestModel request) {
+	    return dashboardService.getComplaintSummaryByCategoryAndTags(request);
+	}
 
 }

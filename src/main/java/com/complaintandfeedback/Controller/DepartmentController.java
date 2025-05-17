@@ -38,4 +38,5 @@ public class DepartmentController {
     public ResponseEntity<Object> getAllActiveDepartments(@RequestBody CommonRequestModel request) {
         return departmentService.getAllActiveDepartments(request);
     }
+    
 }

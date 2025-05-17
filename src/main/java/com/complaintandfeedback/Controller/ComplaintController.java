@@ -1,6 +1,7 @@
 package com.complaintandfeedback.Controller;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +45,11 @@ public class ComplaintController {
     @PostMapping("/getComplaintById")
     public ResponseEntity<Object> getComplaintById(@RequestBody CommonRequestModel request) {
         return complaintService.getComplaintById(request);
+    } 
+    
+    @PostMapping("/getAllDepartmentWithMappedCategory")
+    public Map<String, Object> getAllDepartmentWithMappedCategory(@RequestBody CommonRequestModel request) {
+        return  complaintService.getAllDepartmentWithMappedCategory(request);
     } 
     
 }

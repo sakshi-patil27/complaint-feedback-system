@@ -386,12 +386,17 @@ public class DashboardUserService {
 	}
 	public ResponseEntity<Object> getComplaintsByAssign(CommonRequestModel request) {
 		try (Connection l_DBConnection = l_DataSource.getConnection()) {
-			String l_Query = "SELECT * " 
-		            + "FROM complaint_trn " 
+			String l_Query = "SELECT * "
+					+ "FROM complaint_trn "
 					+ "WHERE is_active = 'YES' "
-					+ "AND org_id = ? AND opr_id = ? " 
-					+ "AND assigned_to = ? "
-					+ "ORDER BY created_on ";
+					+ "  AND org_id = ? "
+					+ "  AND opr_id = ? "
+					+ "  AND assigned_to = ? "
+					+ "ORDER BY "
+					+ "  FIELD(priority, 'HIGH', 'MEDIUM', 'LOW'), "
+					+ "  due_date ASC,"
+					+ "  FIELD(status, 'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'REOPEN', 'ESCALATED', 'DEFERRED', 'RESOLVED', 'CLOSED') "
+					+ "";
 			PreparedStatement l_PreparedStatement= l_DBConnection.prepareStatement(l_Query);
 			l_PreparedStatement.setLong(1, request.getOrg_id());
 			l_PreparedStatement.setLong(2, request.getOpr_id());

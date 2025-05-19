@@ -91,4 +91,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		}
 		return null;
 	}
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+	    String path = request.getServletPath();
+	    // Skip JWT filter for WebSocket handshake
+	    return path.startsWith("/ws");
+	}
+
 }

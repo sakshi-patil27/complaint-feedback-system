@@ -30,7 +30,7 @@ public class ComplaintController {
     }
     @PostMapping("/updateComplaint")
     public ResponseEntity<Object> updateComplaint(@Valid @RequestBody Complaint complaint) throws SQLException {
-        return complaintService.updateComplaint(complaint);
+	        return complaintService.updateComplaint(complaint);
     }
 	
     @PostMapping("/updateStatus")

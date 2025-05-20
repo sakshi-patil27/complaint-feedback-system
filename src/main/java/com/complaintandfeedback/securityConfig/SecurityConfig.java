@@ -45,7 +45,7 @@ public class SecurityConfig {
                     "/api/auth/register", "/api/auth/login", "/api/auth/send-otp", "/api/auth/verify-otp",
                     "/api/auth/forget-password", "/api/departments/getAllDepartment", "/api/roles/getAllRole",
                     "/api/organdopr/getAllOrgs", "/api/organdopr/getAllOprs", "/api/auth/update",
-                    "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+                    "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/ws/**", "/topic/**", "/app/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

@@ -197,7 +197,7 @@ public class DashboardAdminHODService {
 	            Map<String, Object> departmentData = new HashMap<>();
 	            departmentData.put("department_name", departmentName);
 	            departmentData.put("status_counts", statusCounts);
-	            departmentData.put("total", total);  // ✅ Add total here
+	            departmentData.put("total", total);  
 	            resultList.add(departmentData);
 	        }
 

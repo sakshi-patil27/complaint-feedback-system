@@ -307,8 +307,8 @@ public class ComplaintService {
 
 			String sql = "UPDATE complaint_trn SET subject = ?, description = ?, priority = ?, status = ?, "
 					+ "department_id = ?, assigned_to = ?, modified_by = ?, modified_on = ?, due_date = ?, "
-					+ "is_active = ?, opr_id = ?, org_id = ?, category_id = ?, tag_id = ?, location = ?" 
-					+ "WHERE complaint_id = ?";
+					+ "is_active = ?, opr_id = ?, org_id = ?, category_id = ?, tag_id = ?, location = ? " 
+					+ "WHERE complaint_id = ? ";
 
 			PreparedStatement l_PreparedStatement = l_DBConnection.prepareStatement(sql);
 
@@ -1245,9 +1245,7 @@ public class ComplaintService {
 	                }
 	            }
 	        }
-
 	        response.put("label_mapping", labelMapping);
-
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	        response.put("error", "Database error occurred: " + e.getMessage());

@@ -342,7 +342,7 @@ public class ComplaintService {
 					complaintService.setFrom_status(complaint.getL_previous_status());
 					complaintService.setTo_status(complaint.getStatus());
 					complaintService.setReason(complaint.getL_deffered_reason());
-					complaintService.setChanged_by(complaint.getCreated_by());
+					complaintService.setChanged_by(complaint.getModified_by());
 
 					ResponseEntity<Object> response = complaintStatusHistoryService
 							.saveComplaintStatusHistory(complaintService, l_DBConnection);
@@ -716,7 +716,6 @@ public class ComplaintService {
 						if ("YES".equals(complaint.getIs_anonymous())
 								&& !request.getId().equals(complaint.getCreated_by())) {
 							complaint.setCreated_by("");
-							complaint.setModified_by("");
 							complaint.setL_created_by("");
 						}
 						
@@ -804,7 +803,6 @@ public class ComplaintService {
 						if ("YES".equals(complaint.getIs_anonymous())
 								&& !request.getId().equals(complaint.getCreated_by())) {
 							complaint.setCreated_by("");
-							complaint.setModified_by("");
 							complaint.setL_created_by("");
 						}
 						
@@ -1076,7 +1074,6 @@ public class ComplaintService {
 				// anonymous logic
 				if ("YES".equals(complaint.getIs_anonymous()) && !accountId.equals(complaint.getCreated_by())) {
 					complaint.setCreated_by("");
-					complaint.setModified_by("");
 					complaint.setL_created_by("");
 				}
 

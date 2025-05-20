@@ -30,4 +30,6 @@ public class AccountUser {
     private String modified_by;
     private String modified_on;
     private String is_active;
+    private int l_count;
+    private double l_percentage;
 }

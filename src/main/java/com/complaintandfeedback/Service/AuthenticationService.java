@@ -275,10 +275,53 @@ public class AuthenticationService {
 				return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST,
 						"NO DATA FOUND");
 			} else {
+				
 				TypeReference<List<AccountUser>> typeReference = new TypeReference<List<AccountUser>>() {
 				};
 				List<AccountUser> l_data_List = new ObjectMapper().readValue(l_ModuleArr.toString(),
 						typeReference);
+				
+				for(AccountUser accountUser:l_data_List) {
+					
+					l_Query = "SELECT assigned_to, COUNT(*) AS complaint_count, " +
+			                 "ROUND((COUNT(*) * 100.0) / ( " +
+			                 "    SELECT COUNT(*) FROM complaint_trn " +
+			                 "    WHERE is_active = 'YES' " +
+			                 "    AND status IN ('ASSIGNED', 'IN_PROGRESS', 'DEFERRED') " +
+			                 "    AND department_id = ? " +
+			                 "), 2) AS percentage " +
+			                 "FROM complaint_trn " +
+			                 "WHERE is_active = 'YES' " +
+			                 "AND status IN ('ASSIGNED', 'IN_PROGRESS', 'DEFERRED') " +
+			                 "AND assigned_to = ? " +
+			                 "AND department_id = ? " +
+			                 "GROUP BY assigned_to;";
+
+					l_PreparedStatement = l_DBConnection.prepareStatement(l_Query);
+		
+					// Set parameters
+					l_PreparedStatement.setString(1, accountUser.getDepartment_id()); // for subquery
+					l_PreparedStatement.setString(2, accountUser.getAccount_id());   // for outer query
+					l_PreparedStatement.setString(3, accountUser.getDepartment_id()); // for outer query
+		
+					l_ResultSet = l_PreparedStatement.executeQuery();
+		
+					int complaintCount = 0;
+					double percentage = 0;
+		
+					if (l_ResultSet.next()) {
+					    complaintCount = l_ResultSet.getInt("complaint_count");
+					    percentage = l_ResultSet.getDouble("percentage");
+		
+					    // You can add your own validation or business logic here
+					    if (complaintCount == 0 || percentage == 0) {
+					        return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Assigned user not found");
+					    }
+					}
+					accountUser.setL_count(complaintCount);
+					accountUser.setL_percentage(percentage);
+				}
+				
 				return ResponseEntity.status(HttpStatus.OK).body(l_data_List);
 			}
 		}

@@ -239,7 +239,7 @@ public class ComplaintService {
 				AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
 
 				// Get email of corresponding HOD when complaint is created
-				l_Query = "SELECT a.account_id a.email\n" + "FROM account_user_mst a\n"
+				l_Query = "SELECT a.account_id, a.email\n" + "FROM account_user_mst a\n"
 						+ "JOIN roles_mst r ON a.role_id = r.role_id\n"
 						+ "WHERE a.department_id = ? AND r.role_name = 'HOD';";
 
@@ -271,7 +271,7 @@ public class ComplaintService {
 				//send notification to the corresponding notification HOD 
 				notificationService.sendNotification(
 						hodId,
-					    "A complaint is created you: " + complaint.getSubject() 
+					    "New Complaint recieved for your department: " + complaint.getSubject() 
 				);
 					
 
@@ -495,7 +495,7 @@ public class ComplaintService {
 				AccountUser accountUser = objectMapper.convertValue(response.getBody(), AccountUser.class);
 
 				// Get email of corresponding HOD when complaint is created
-				sql = "SELECT a.email\n" + "FROM account_user_mst a\n" + "JOIN roles_mst r ON a.role_id = r.role_id\n"
+				sql = "SELECT a.account_id, a.email\n" + "FROM account_user_mst a\n" + "JOIN roles_mst r ON a.role_id = r.role_id\n"
 						+ "WHERE a.department_id = ? AND r.role_name = 'HOD';";
 
 				l_PreparedStatement = l_DBConnection.prepareStatement(sql);
@@ -505,10 +505,12 @@ public class ComplaintService {
 				l_ResultSet = l_PreparedStatement.executeQuery();
 
 				String hodEmail = null;
+				String hodId = null;
 				if (l_ResultSet.next()) {
 					hodEmail = l_ResultSet.getString("email");
-					if (hodEmail == null || hodEmail.isBlank()) {
-						return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email not Found");
+					hodId = l_ResultSet.getString("account_id");
+					if (hodEmail == null || hodEmail.isBlank() || hodId == null || hodId.isBlank()) {
+						return commonUtils.responseErrorHeader(null, null, HttpStatus.NOT_FOUND, "Email and AccountId not Found");
 					}
 				}
 
@@ -536,6 +538,12 @@ public class ComplaintService {
 //		        	l_DBConnection.rollback();
 //		        	return commonUtils.responseErrorHeader(null, null, HttpStatus.BAD_REQUEST, "Failed to update complaint");
 //		        }
+				
+				//send notification to the corresponding notification HOD 
+				notificationService.sendNotification(
+						hodId,
+					    "Status updated for the complaint: " + complaint.getSubject() 
+				);
 
 				l_DBConnection.commit();
 				return ResponseEntity.status(HttpStatus.OK).body(
